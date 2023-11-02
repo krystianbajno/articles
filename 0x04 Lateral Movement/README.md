@@ -57,10 +57,11 @@ In the previous article, we gained access to the domain as a low-privileged user
 # 0x01 Automatic enumeration with BloodHound
 <a href="#0x02"><button class="nav-btn">Next chapter</button></a>
 
-### What is BloodHound?
+## What is BloodHound?
 
 BloodHound is an open-source tool to analyze and improve the security of Active Directory networks. It visualizes relationships and identifies attack paths within Active Directory environments. It is based on a graph theory, and uses a graph-based database Neo4j.
-### Installation
+
+## Installation
 
 Before utilizing BloodHound, it must be installed. To do so, we must obtain it from the apt repository.
 ```
@@ -82,7 +83,7 @@ Once the password has been changed, we can proceed to run BloodHound.
 ```
 bloodhound 
 ```
-### Injestion
+## Injestion
 
 The database is currently empty, containing no data. To begin data ingestion, we will proceed by using the domain user credentials and executing the following command:
 
@@ -97,7 +98,8 @@ The injestor has produced several files with data detailing Active Directory obj
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/4.png)
   
 These files can now be imported into BloodHound for in-depth analysis and visualization, by clicking on the "Upload Data" button and selecting the files from the directory where the scan data is stored.
-### Analysis
+
+## Analysis
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/6.png)
 
@@ -122,7 +124,6 @@ The query language used in BloodHound is called **"Cypher"**, and is based on th
 In addition to the manual analysis, let's auto-generate nice reports using another utility called **PlumHound**.
 
 <div id="0x02"></div>
-
 
 # 0x02 Reports with PlumHound
 <a href="#0x01"><button class="nav-btn">Previous chapter</button></a><a href="#0x03"><button class="nav-btn">Next chapter</button></a>
@@ -287,15 +288,18 @@ administrative privileges, access to highly sensitive systems or data.
 - Monitor for abnormal authentication patterns and unauthorized access attempts.
 - Educate users about password security and the risks of insufficient passwords.
 - Enforce strong password policies and encourage good password practices (as described in the part 1 of the series).
-###Our next step is to gain access to the compromised machine.
+
+### Our next step is to gain access to the compromised machine.
 
 <div id="0x04"></div>
 
 # 0x04 Lateral movement
+
 <a href="#0x03"><button class="nav-btn">Previous chapter</button></a><a href="#0x05"><button class="nav-btn">Next chapter</button></a>
 
 To do this, we'll first explore some of the tools and techniques for lateral movement that can assist us in achieving this goal.
-### psexec
+
+## psexec
 
 PsExec is a widely used tool within the Impacket library. It's named after the tool in Microsoft's SysInternals suite, and it's designed to provide a fully interactive shell on remote Windows machines. It achieves this by uploading an executable with a random name to the hidden Windows `$ADMIN` share, registering a service through RPC and the Service Control Manager (SCM), executing the service, and then communicating via a named pipe.
 
@@ -306,6 +310,7 @@ To use PsExec effectively, we require credentials such as a hash, or a username 
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/20.png)
+
 ### Access denied
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/bugs.png)
@@ -317,7 +322,8 @@ PsExec is also very often picked up by the Windows Defender. What is picked up i
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/21.png)
 
 In order to gain access, we will need different tools from impacket toolset.
-### smbexec
+
+## smbexec
 
 Another tool we can utilize is `smbexec`. Instead of uploading an executable and using Windows SCM to create a service that uses named pipes, `smbexec` is creating a batch (.bat) file for each command that we run, then creates a service to run this file using `cmd.exe`. It redirects `stdout` and `stderr`  to a temporary file on a readable SMB share (or creates a share on our attacking host if the remote doesn't have one), and then pulls the contents of that file into the `smbexec` semi-interactive pseudo-shell. This is very noisy, as it generates a lot of Windows Event logs since we are creating and deleting a lot of services, yet is detected less frequently than `psexec.py`. 
 
@@ -337,7 +343,8 @@ sc \\<host> start <service>
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/22b.png)
 
 As evident, `smbexec` has successfully executed code on the remote machine, resulting in the compromise of that system without any issues. Let's proceed to explore another utility that can help us gain access to that machine.
-### wmiexec
+
+## wmiexec
 
 The `wmiexec`, while not providing an interactive shell, is a stealthier option compared to `smbexec`. It operates with lower visibility in terms of generating Windows Event logs related to service creation. Instead, `wmiexec` leverages Windows Management Instrumentation (WMI) and DCOM objects to connect remotely and create a Windows process for command execution using RPC on port 135. It writes command output to a temporary file, retrieves the output over SMB, and then deletes the file, resulting in a semi-interactive pseudo-shell. WmiExec contains `lput`, and `lget` built in shell commands to upload and download files.
 
@@ -362,6 +369,7 @@ wmiProcess.InvokeMethod("Create", processToRun);
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/22.png)
 
 We've observed that `wmiexec` successfully executed code on the remote machine using the local administrator account without any complications.
+
 ## atexec
 
 Atexec.py connects to the target host via RPC and leverages the Task Schedule Service to register a scheduled task. This task employs `cmd.exe` to execute each command, directing the output to a temporary file within the `ADMIN$` share. After running the task, `atexec` deletes it and then connects to the `ADMIN$` share over SMB to fetch the output file and remove it. 
@@ -404,7 +412,9 @@ Counterpart (simplified):
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/29.png)
 
 This article [Offensive Lateral Movement](https://posts.specterops.io/offensive-lateral-movement-1744ae62b14f) provides a valuable resource for more in-depth information on these techniques.
+
 ## secretsdump
+
 Last but not least, let's explore the utility that facilitates the remote dumping of hashes from the compromised machine. These hashes can be valuable for further analysis, cracking, or lateral movement if they are NTLM hashes by employing Pass The Hash attack.
 
 Impacket's `secretsdump` is a script used to extract credentials and secrets from a system. It has two main use-cases: dumping NTLM hashes of local users (https://attack.mitre.org/techniques/T1003/002/) and extracting domain credentials via DCSync (https://attack.mitre.org/techniques/T1003/006/). The `secretsdump` is activating the `RemoteRegistry` service as a part of the process, but `RemoteRegistry` can be used for legitimate administrative tasks and may not always indicate malicious activity, and this is why this activity is slightly harder to detect.
@@ -451,6 +461,7 @@ We've obtained the encrypted Ticket Granting Ticket, which can now be cracked us
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/26.png)
+
 ## Roasted
 
 The cracking attempt took 6 minutes and exposed the password as `Sunnyday123!`. This password can now be passed within the domain.
@@ -470,6 +481,7 @@ It appears that the credentials were valid, and one of the computers had this us
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/28.png)
 
 The `10.10.24.100` machine (along with a user) has been compromised once again.
+
 ## What is the risk assessment for AS-REP roasting?
 
 **Likelihood: Very High** – AS-REP roasting allows any domain user to retrieve the password hash of any other Kerberos user accounts that have pre-authentication option disabled. Likelihood is very high when password policies are insufficient.
@@ -497,7 +509,9 @@ Our next step is to ensure our presence on the machine is long-lasting and diffi
 In this chapter, we will establish persistence through techniques such as creating rogue local administration accounts, enabling RDP and WinRM, and employing more advanced DLL hijacking method to load hidden malware from a .dll file.
 
 We will first establish persistence by creating a rogue Local Administrator account, enabling RDP, and WinRM. Next, we'll set up port forwarding tunnels for traffic and utilize Havoc C2   (https://github.com/HavocFramework/Havoc) as our primary Command and Control server to send commands to the beacons and inject code directly into memory.
+
 ## AdminIsTraitor
+
 Let's start from creating a rogue system administrator account, and enabling RDP. The user name is going to be `helpdesk` to not raise much suspicion.
 
 ```
@@ -555,12 +569,14 @@ evil-winrm -i 10.10.24.100 -u helpdesk -p G3t_somehelp_br0
 `https://www.axosoft.com/dev-blog/top-10-things-to-know-about-scrum`
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/control.jpeg)
 
-## Command and Control 
+## Command and Control
+
 Command and Control is our centre of operations. It is the application (or even our botnet brain) from which we issue commands to compromised systems, set up listeners, generate payloads, inject programs into memory, facilitate lateral movement, and even chat with team members.
 
 The best way to setup the C2 is to set the redirectors in the cloud, and keep the servers and clients private. Isn't communication with Microsoft over HTTPS from "Teams.exe" application not suspicious at all? Until it is... For this simulation however, we will keep our cyberattacks in the virtual network.
 
 To facilitate reverse communication with the C2, we'll set up several tunnels on ports `65500`, `65510`,`65520`, and `65530` using `chisel` on a previously compromised mail server.
+
 ## Port forwarding
 
 First, lets download `chisel`.
@@ -760,7 +776,8 @@ For such a simple loader and a well known shellcode extraction/obfuscation tool 
 
 To boost stealth, we'll employ a crypter and a distinctive payload execution approach. This includes compiling  a .DLL file and creating Windows Services to run the .DLL, as well as utilizing DLL hijacking, which we'll delve into shortly. The decryption key is going to be fetched from the server and locally stored, eliminating the need for remote connections later. To avoid running in the current process memory, we'll create a thread and inject the payload into `explorer.exe`.
 
-You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno).
+You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
+
 ## Encryption
 
 Let's encrypt the payload using a Python script. In our Python script, we'll begin by encrypting a payload using a basic XOR crypter. While XOR encryption is not suitable for securing sensitive data, it effectively obfuscates content to avoid antivirus detection. The only scenario where XOR is fully secure is the "One Time Pad" encryption, where the key length matches the content and is used once (learn more: [https://en.wikipedia.org/wiki/One-time_pad](https://en.wikipedia.org/wiki/One-time_pad)). In our case, we'll use a 512-bit key.
@@ -1034,7 +1051,8 @@ This technique involves searching for DLLs with improper imports. When a .DLL is
 5. Current directory
 6. Directories listed in the PATH environment variable.
 
-This technique can potentially elevate our local privileges to `NT AUTHORITY / System` when the binary is executed with such privileges. However, it's crucial to note that we need to have these privileges initially to identify the vulnerability. 
+This technique can potentially elevate our local privileges to `NT AUTHORITY / System` when the binary is executed with such privileges. However, it's crucial to note that we need to have these privileges initially to identify the vulnerability.
+
 ### Combined with the injection, if the domain administrator logs into this computer, we will obtain his session, resulting in the compromise of the whole network.
 
 Moreover, the vulnerability could potentially exist not in user installed software, but in Windows systems already (which is the case in this chapter), and we can readily replicate it on our host for testing and exploitation.
@@ -1143,6 +1161,7 @@ Our malware infiltration has successfully compromised the entire network. We hav
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/owned.png)
 
 ### How to prevent this?
+
 You need cyclic penetration tests/red team assignments, as well as blue teams to monitor the network. The default security controls have failed to detect custom malware. Consider implementing monitoring solutions (SIEM, SOAR, HIDS, NIDS) to detect and alert on unauthorized access attempts, unusual authentication patterns, suspicious behavior.
 
 ### Let's pretend this did not happened just yet - I want to show you more vulnerabilities. This after all is a simulated penetration test assignment, and we want to find as much as we can.
@@ -1158,6 +1177,7 @@ The persistence and AV evasion chapter was quite extensive, wasn't it? While the
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/post2.jpg)
 
 ## What is Print Nightmare?
+
 Print Nightmare (CVE-2021-1675 / CVE-2021-34527) was a vulnerability targeting Windows systems with print spooler service enabled. The exploitation happened over `MS-RPN|MS-PAR` print system remote protocol. It granted access to the `RpcAddPrinterDriverEx` feature that installs new printer drivers in the systems, which can be downloaded from the attacker's anonymous SMB share. 
 
 Due to that, the Windows print spooler service was vulnerable to remote code execution that leveraged a user account - either domain-joined or local account - to take full control of a system as the `NT Authority / SYSTEM` user. Proof-of-concept (PoC) code has been made publicly available for this vulnerability leaving Windows systems at critical risk. 
@@ -1169,6 +1189,7 @@ Due to that, the Windows print spooler service was vulnerable to remote code exe
 As of 2023 - when **all** the patches are applied, this vulnerability is no longer a threat, but there are many Windows systems out there without them applied. The nightmare is not over.
 
 ## Detection
+
 To detect the vulnerability, we could use the Impacket library. We'd connect to the RPC service on the machines and search for relevant information, to check if `MS-RPN` or `MS-PAR` services were enabled.
 
 ```
@@ -1274,6 +1295,7 @@ When connecting to the machine's SMB port (.100), we've successfully tunneled tr
 This method is handy for hijacking SMB connections, obtaining hashes, and potentially exploiting SMB relay (which we'll cover in the next chapter) to gain immediate authentication on other servers. The more active connections to the server, the more opportunities we have – for instance, compromising an actively used SMB share and stealing credentials would be especially devastating.
 
 ## Exploitation
+
 Next, download the PrintNightmare repository from [https://github.com/ly4k/PrintNightmare](https://github.com/ly4k/PrintNightmare) and create a .dll file for the Print Spooler service to execute, taking inspiration from John Hammond's example at [https://github.com/JohnHammond/CVE-2021-34527/blob/master/nightmare-dll/nightmare/dllmain.cpp](https://github.com/JohnHammond/CVE-2021-34527/blob/master/nightmare-dll/nightmare/dllmain.cpp). Additionally, let's add the user to more groups, and modify registry to allow remote commands.
 
 ```
@@ -1379,7 +1401,7 @@ Likelihood: **High** - Users with valid credentials inside the domain can execut
 Impact: **Very High** – PrintNightmare exploit allows to execute high-privilege arbitrary remote code on the targeted machine given attacker has valid domain credentials, resulting in compromise of the machine.
 
 ## What is the remediation?
-  
+
 To resolve the issue, apply the latest Microsoft patches that address the "PrintNightmare" vulnerability. These patches fix the problem but now require users to have administrative privileges when using the Point and Print feature to install printer drivers.
 
 It's important to note that this change may impact organizations that previously allowed non-elevated users to add or update printer drivers, as they will no longer be able to do so.
@@ -1404,6 +1426,7 @@ Let me present you another vulnerability **enabled by default**.
 <div id="0x0B"></div>
 
 # 0x0B URL shortcut file share attack with SMB relay
+
 <a href="#0x0A"><button class="nav-btn">Previous chapter</button></a><a href="#0x0C"><button class="nav-btn">Next chapter</button></a>
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/smbrelaybloody2.png)
@@ -1431,6 +1454,7 @@ crackmapexec smb -u j.arnold -p 'F4ll2023!' -d democorp.com hosts.txt --shares
 As we can see, the machines` .100`, `.101`, and `.102` have SMB signing not required (`signing: False`), and the `.101` machine has a Read/Writable share called `printing` available to us.
 
 ## Let's capture the hashes
+
 To execute the attack, we should begin by creating a payload shortcut file first.
 
 `helpdesk.lnk`
@@ -1471,6 +1495,7 @@ responder -I lo -A
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/4-2.png)
 
 ### Hash captured - the user has stepped on the mine
+
 Isn't it interesting? The domain administrator opened the legitimate `printing` share, and we've got their NTLMv2 SSP hash. We can crack this hash offline in order to obtain his password, though it takes longer than NTLMv1, and we can't do Pass-The-Hash technique here. Alternatively, we can set up the SMB relay, which we will do next.
 
 This exploit only needed us to compromise one machine for SMB hijacking, with the prerequisite of infiltrating the internal network externally, and hijacking one of machines SMB service just as described in the previous chapter. The attack had to occur within the local network; if we were an internal threat, we wouldn't have required any compromised machines to tunnel the traffic. 
@@ -1525,7 +1550,9 @@ Now let's try to execute a command.
 └─# proxychains impacket-smbexec democorp/Administrator@10.10.24.102 -no-pass
 ```
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/7-2.png)
+
 ## The machine has been compromised
+
 We've authenticated as the Administrator and executed remote command on the machine `10.10.24.102`.
 
 Now let's dump the hashes from the machine using `secretsdump`.
@@ -1536,6 +1563,7 @@ proxychains impacket-secretsdump democorp/Administrator@10.10.24.102 -no-pass
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/8-1.png)
 
 ### We've captured the local credentials from the remote target machine.
+
 **In the credentials, we can see, that there is a cached domain logon information, and we will cover this in the next chapter.**
 
 One thing to keep in mind when it comes to relaying SSPs, is that Microsoft enabled a patch that disallowed the same machine from authenticating to itself, it is possible to authenticate only to other machines. This prevents exploiting auth back vulnerabilities such as `PetitPotam` from compromising the same machine - for example Domain Controller (without ADCS 😉) - or SMB relaying to the same machine.
@@ -1549,6 +1577,7 @@ One thing to keep in mind when it comes to relaying SSPs, is that Microsoft enab
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/9-2.png)
 
 We cannot auth-back to the same machine the user initiated connection from. Planting the payload for example on user's desktop would not work, as the connection was initiated from the same machine.
+
 ### If the user was using a different machine than .101, for example let's open the share from .102.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/11-2.png)
@@ -1571,12 +1600,14 @@ The `ntlmrelayx` provides us with a message `[-] Signing is required, attack won
 We would not compromise the domain controller that way, however machines `.100`, `.101`, and `.102` are vulnerable to this exploit, which is kind of deadly.
 
 This vulnerability can be called `Insufficient Hardening - SMB signing disabled (Critical)` on our penetration test report.
+
 ## What is the risk?
 
 Likelihood: **High** – Relaying password hashes is a basic technique not requiring offline cracking, and an internal threat can do so. Any low privileged domain user can upload a file to the frequently used SMB share or perform Man in the Middle attacks. An external threat must first compromise one of the machines allowing to tunnel the traffic to his relay.
 
 Impact: **Very High** – If exploited, an adversary gains code execution, leading to lateral
 movement across the network.
+
 ## What is the remediation?
 
 Enable SMBv3, and SMB signing on all domain computers. Alternatively, as SMB signing can cause performance issues, disabling NTLM authentication, enforcing account tiering, and limiting local admin users can effectively help mitigate attacks.
@@ -1592,6 +1623,7 @@ Enable `Microsoft network server: Digitally sign communications (always), Micros
 New Microsoft patches introduce enhanced SMBv3 encryption. You can enable it by following this reference link: [https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security](https://learn.microsoft.com/en-us/windows-server/storage/file-server/smb-security)
 
 For full mitigation and detection guidance, please reference the MITRE guidance here: https://attack.mitre.org/techniques/T1557/001/
+
 ### The discovered stored domain logon information lead us to the next chapter.
 
 <div id="0x0C"></div>
@@ -1642,6 +1674,7 @@ Windows uses previously entered (cached) credentials to grant the user access pe
 The morale of the story is - the credentials on machines memory are sometimes stored in plaintext. Be careful what account you use to log into the domain machines.
 
 Technique of stealing these credentials is known as https://attack.mitre.org/techniques/T1003.
+
 ## Let's do the same offline though
 
 Instead of working on a live organism, we will download the memory dump for further investigation offline. This is a more stealthy approach, and we will be requiring no obfuscation of Mimikatz.
@@ -1761,6 +1794,7 @@ python3 PetitPotam.py -u j.arnold -p F4ll2023! 10.10.24.102 10.10.24.250
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/20-2.png)
 
 If the attack is successful, we will have gained access to the ticket for the "DEMOCORP-DC" service.
+
 ## Manual Authentication
 
 In addition to coercing authentication, it's essential to understand that unconstrained delegation computers can act as a valuable resource for obtaining domain credentials. When a user authenticates to the unconstrained delegation computer, their Kerberos ticket is also stored in the memory, further expanding the pool of credentials.
@@ -1876,10 +1910,12 @@ https://github.com/topotam/PetitPotam
 
 <div id="0x0E"></div>
 
-#0x0E Golden Ticket and domain persistence
+# 0x0E Golden Ticket and domain persistence
+
 <a href="#0x0D"><button class="nav-btn">Previous chapter</button></a><a href="#0x0F"><button class="nav-btn">Next chapter</button></a>
 
 In the previous chapter, we successfully compromised a vulnerable machine with unconstrained delegation. From there, we executed a DCSync attack to obtain the credentials of the `krbtgt` user, securing both the AES256 key and the NTLM (RC4) hash.
+
 ## What is a Golden Ticket?
 
 Golden Ticket is a a forged ticket outside of a realms domain control. It was not created by the domain controller, and is invisible before use. When someone uses this ticket, it doesn't look any different in the security logs compared to a legitimate user's actions.
@@ -1891,6 +1927,7 @@ The forged PAC is embedded in a TGT, which is subsequently used to request Servi
 It's worth noting that, at one point, we could forge tickets even for non-existent users. Prior to the November 2021 updates, user-ids and group-ids held significance, while the supplied username often didn't matter. However, after the November 2021 updates, if the username provided is not present in Active Directory, the ticket is rejected, and this rule applies to Silver Tickets as well.
 
 Forging this ticket is a game over, we achieved persistence over the domain.
+
 ## Creating a Golden Ticket
 
 To generate the Golden Ticket, we must first obtain a Domain SID. This can be achieved by utilizing Impacket's `lookupsid.py` tool. Next, we can craft the ticket using obtained AES256 key (or NTLM hash) belonging to `krbtgt` account using the Impacket's `ticketer.py`.
@@ -1947,6 +1984,7 @@ impacket-secretsdump 'helpdesk:G3t_somehelp_br0@10.10.24.250'
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/42.png)
 
 What if we want to save the whole domain to our disk?
+
 ## Offline credentials extraction
 
 We can dump these secrets manually, by copying the `ntds.dit`, `SAM`, `SECURITY`, and `SYSTEM` files from the Domain Controller to our local machine.
@@ -1971,6 +2009,7 @@ impacket-secretsdump -ntds <ntds> -system <system> -security <security>
 ```
 
 In summary,
+
 ### We have compromised the domain and achieved persistence.
 
 `https://en.wikipedia.org/wiki/Epic_Win`
