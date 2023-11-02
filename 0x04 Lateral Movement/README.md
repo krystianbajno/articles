@@ -3,7 +3,7 @@
 This is the final part two of a series of articles bound to present a walkthrough leading to the compromise of domain controller of a fictional company called "Demo Corp", explaining the vulnerabilities along the way.
 
 Link to part one:  https://news.baycode.eu/0x03-prototype-pollution/
-You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno).
+You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
 Full article series can be downloaded in form of a **free e-book** [here]. 
 
 The **penetration test report** can be downloaded [here].
@@ -932,7 +932,7 @@ In the next step, we'll embed the encrypted payload into the binary, as demonstr
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/53.png)
 
-To see the full source code visit my GitHub ([https://github.com/krystianbajno](https://github.com/krystianbajno)).
+To see the full source code visit my GitHub ([https://github.com/krystianbajno](https://github.com/krystianbajno/articles)).
 
 Now let's test the payload - start the application we've written and load this .dll.
 
