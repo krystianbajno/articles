@@ -53,7 +53,9 @@ With that being said, let us go and take over the network.
 In the previous article, we gained access to the domain as a low-privileged user `j.arnold` and his password `F4ll2023!`. Our next step involves enumeration using BloodHound and this user account.
 
 <div id="0x01"></div>
+
 # 0x01 Automatic enumeration with BloodHound
+<a href="#0x02"><button class="nav-btn">Next chapter</button></a>
 
 ### What is BloodHound?
 
@@ -120,10 +122,15 @@ The query language used in BloodHound is called **"Cypher"**, and is based on th
 In addition to the manual analysis, let's auto-generate nice reports using another utility called **PlumHound**.
 
 <div id="0x02"></div>
+
+
 # 0x02 Reports with PlumHound
+<a href="#0x01"><button class="nav-btn">Previous chapter</button></a><a href="#0x03"><button class="nav-btn">Next chapter</button></a>
 
 ### What is PlumHound
+
 PlumHound is a tool that enhances BloodHound for purple security teams, making it easier to identify Active Directory security vulnerabilities resulting from various factors. It does this by converting BloodHound's' powerful queries into actionable reports. 
+
 ### Installation
 
 In order to install PlumHound, we must clone it from a git repository.
@@ -173,7 +180,10 @@ Below the table you can find the query that was used to extract information from
 
 Our initial attack strategy targets Kerberoasting. In the PlumHound report, we've identified a Kerberoastable account, "BadgeService@democorp.com," which serves as our starting point for this approach.
 <div id="0x03"></div>
+
+
 # 0x03 Kerberoasting
+<a href="#0x02"><button class="nav-btn">Previous chapter</button></a><a href="#0x04"><button class="nav-btn">Next chapter</button></a>
 
 ## What is Kerberoasting?
 Kerberoasting (https://attack.mitre.org/techniques/T1558/003/) is an attack technique that targets insufficient or easily crackable passwords in Kerberos Service Principal Names (SPNs) to obtain the underlying user account's password hashes. 
@@ -183,7 +193,9 @@ The attacker requests a Kerberos service ticket (TGS) for each targeted SPN, ext
 This attack takes advantage of vulnerabilities in password security and can potentially lead to unauthorized access to sensitive systems and data.
 
 In order to execute this attack, we need valid domain credentials (even low privileged user).
+
 ## Clock synchronization
+
 Before proceeding with this attack, it's crucial to synchronize the clock of our Kali Linux machine with the domain controller. To achieve this, we should configure our `sshuttle` tunnel, set up previously in the article series, to support UDP packets using the `tproxy` method. 
 
 ```
@@ -203,6 +215,7 @@ Once the proxy is set up, we can proceed to send UDP clock synchronization packe
 ```
 rdate -n 10.10.24.250
 ```
+
 ## Impacket
 
 In order to extract the hashes from TGS, we will make use of the impacket library.
@@ -220,7 +233,8 @@ Once the Impacket library is installed, we can make use of its `examples` script
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/16.png)
-## We have obtained the service account hash.
+
+## We have obtained the service account hash
 
 We can crack the obtained hash offline using a tool like **hashcat**. To do this, we will save the hash to a file on our host machine and crack it on our host to ensure we use a machine with GPU for faster processing.
 
@@ -235,6 +249,7 @@ PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt ..\rockyou.txt 
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/17.png)
+
 ## Password cracked
 
 The password, `Perfection123!` has been successfully cracked in just 3 minutes using a combination of a mobile laptop RTX3060 GPU, Ryzen 7 CPU, and an AMD integrated graphics card. We can display the cracked password once more using the following command:
@@ -256,6 +271,7 @@ crackmapexec smb -u BadgeService -p 'Perfection123!' -d democorp.com ./hosts.txt
 We've discovered that the BadgeService account is a local administrator on the `10.20.24.100` machine, and we have the credentials to execute remote code as a highly privileged user. 
 
 On our penetration testing report, we would mark this finding as **Insufficient Privileged Account Management - Kerberoasting attack** and mark it as **Critical**.
+
 ## What is the risk assessment for Kerberoasting?
 
 **Likelihood: Very High** – The likelihood is very high if insufficient passwords are
@@ -263,6 +279,7 @@ widespread. Users with valid credentials to the domain can execute this attack.
 
 **Impact: Very High** – The impact is very high if compromised accounts have
 administrative privileges, access to highly sensitive systems or data.
+
 ## What is the remediation?
 
 - Use Group Managed Service Accounts (GMSA - https://learn.microsoft.com/en-us/windows-server/security/group-managed-service-accounts/group-managed-service-accounts-overview) for privileged services.
@@ -270,10 +287,12 @@ administrative privileges, access to highly sensitive systems or data.
 - Monitor for abnormal authentication patterns and unauthorized access attempts.
 - Educate users about password security and the risks of insufficient passwords.
 - Enforce strong password policies and encourage good password practices (as described in the part 1 of the series).
-### Our next step is to gain access to the compromised machine.
+###Our next step is to gain access to the compromised machine.
 
 <div id="0x04"></div>
+
 # 0x04 Lateral movement
+<a href="#0x03"><button class="nav-btn">Previous chapter</button></a><a href="#0x05"><button class="nav-btn">Next chapter</button></a>
 
 To do this, we'll first explore some of the tools and techniques for lateral movement that can assist us in achieving this goal.
 ### psexec
@@ -406,7 +425,9 @@ As we can see, we've successfully dumped the hashes from the machine `10.10.24.1
 At this point, we've compromised and dumped the hashes from the first domain machine. We are not finished here, the next step is to establish persistence, but before we move into persistence and anti-virus bypassing, let's exploit another vulnerability affecting the same machine.
 
 <div id="0x05"></div>
+
 # 0x05 AS-REP roasting
+<a href="#0x04"><button class="nav-btn">Previous chapter</button></a><a href="#0x06"><button class="nav-btn">Next chapter</button></a>
 
 ## What is AS-REP roasting?
 AS-REP roasting (https://attack.mitre.org/techniques/T1558/004/) is a method similar to Kerberoasting. It exploits a Kerberos protocol vulnerability, specifically the absence of pre-authentication. Attackers target users with **"Do not require Kerberos preauthentication"** setting enabled. By sending an AS_REQ request on behalf of a user, they can obtain an AS_REP message containing the user's password hash. This hash is valuable, as it can be cracked offline. 
@@ -464,7 +485,9 @@ administrative privileges, access to highly sensitive systems or data.
 - Enforce strong password policies and encourage good password practices (as described in the part 1 of the series).
 
 <div id="0x06"></div>
+
 # 0x06 Persistence on Windows
+<a href="#0x05"><button class="nav-btn">Previous chapter</button></a><a href="#0x07"><button class="nav-btn">Next chapter</button></a>
 
 `https://makeameme.org/meme/what-if-i-s68chp`
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/what-if-i-s68chp.jpg)
@@ -662,7 +685,9 @@ And then click generate.
 This is not the end though.
 
 <div id="0x07"></div>
+
 # 0x07 Anti Virus evasion
+<a href="#0x06"><button class="nav-btn">Previous chapter</button></a><a href="#0x08"><button class="nav-btn">Next chapter</button></a>
 
 Despite Havoc's demons' use of techniques like proxying system calls, delaying commands, and AMSI patching to evade detection and remain hidden, we must adapt our methodology to avoid triggering existing signatures in Microsoft Windows Defender and prevent detection of binary in the first place.
 
@@ -917,7 +942,9 @@ As we can see, only 5 detection engines managed to detect our .dll - all based o
 Lets use it now.
 
 <div id="0x08"></div>
+
 # 0x08 Persistence through Windows Service
+<a href="#0x07"><button class="nav-btn">Previous chapter</button></a><a href="#0x09"><button class="nav-btn">Next chapter</button></a>
 
 This method involves installation of a new Windows Service, which will run within an svchost.exe process and inject payload into another `svchost.exe`. Initially, we'll incorporate the following code into the previously created DLL.
 
@@ -994,7 +1021,9 @@ As we can see, we have **successfully evaded Windows Defender** and connected th
 Let's employ something more advanced and stealthy now.
 
 <div id="0x09"></div>
+
 # 0x09 Persistence through DLL Hijacking and Proxying
+<a href="#0x08"><button class="nav-btn">Previous chapter</button></a><a href="#0x0A"><button class="nav-btn">Next chapter</button></a>
 
 This technique involves searching for DLLs with improper imports. When a .DLL is not found in its expected location, it is then searched for in the following order:
 
@@ -1121,7 +1150,9 @@ You need cyclic penetration tests/red team assignments, as well as blue teams to
 The persistence and AV evasion chapter was quite extensive, wasn't it? While there are numerous additional methods for establishing persistence, we won't delve into them in this article to avoid making it overly lengthy. Let me present you another vulnerability, that is enabled on Windows systems by **default.**
 
 <div id="0x0A"></div>
+
 # 0x0A Print Nightmare exploitation
+<a href="#0x09"><button class="nav-btn">Previous chapter</button></a><a href="#0x0B"><button class="nav-btn">Next chapter</button></a>
 
 `https://en.webfail.com/6e69f0539aa`
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/post2.jpg)
@@ -1371,7 +1402,9 @@ To disable it locally via the command line, use the following commands:
 Let me present you another vulnerability **enabled by default**.
 
 <div id="0x0B"></div>
+
 # 0x0B URL shortcut file share attack with SMB relay
+<a href="#0x0A"><button class="nav-btn">Previous chapter</button></a><a href="#0x0C"><button class="nav-btn">Next chapter</button></a>
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/smbrelaybloody2.png)
 
@@ -1562,12 +1595,15 @@ For full mitigation and detection guidance, please reference the MITRE guidance 
 ### The discovered stored domain logon information lead us to the next chapter.
 
 <div id="0x0C"></div>
+
 # 0x0C Dumping LSASS credentials
+<a href="#0x0B"><button class="nav-btn">Previous chapter</button></a><a href="#0x0D"><button class="nav-btn">Next chapter</button></a>
 
 After compromising the machine .101, instead of cracking the hashes, let's dump it's LSASS process memory and find saved credentials in cleartext.
 
 `https://imgflip.com/i/3ms9f2`
-![[3ms9f2.jpg]]
+![](http://news.baycode.eu/wp-content/uploads/2023/11/3ms9f2-1.jpg)
+
 ## Things were easier back in the past
 
 After the release of Windows 8.1 and Windows Server 2012 R2, Microsoft introduced a security feature called "LSA Protection" to safeguard the LSASS process from credential theft attacks. LSA Protection designates LSASS as a Protected Process Light (PPL), ensuring lower privilege or non-protected processes cannot access or tamper with it. The attempts to access this process are also monitored by AVs.
@@ -1690,7 +1726,9 @@ https://attack.mitre.org/techniques/T1003/005/
 Now, let's talk about another vulnerability.
 
 <div id="0x0D"></div>
+
 # 0x0D Unconstrained delegation attacks
+<a href="#0x0C"><button class="nav-btn">Previous chapter</button></a><a href="#0x0E"><button class="nav-btn">Next chapter</button></a>
 
 In the beginning, during our enumeration with BloodHound, we've discovered a host with unconstrained delegation enabled - .102. This machine has been compromised by us numerous times in this article.
 
@@ -1837,7 +1875,9 @@ https://github.com/p0dalirius/Coercer
 https://github.com/topotam/PetitPotam
 
 <div id="0x0E"></div>
+
 #0x0E Golden Ticket and domain persistence
+<a href="#0x0D"><button class="nav-btn">Previous chapter</button></a><a href="#0x0F"><button class="nav-btn">Next chapter</button></a>
 
 In the previous chapter, we successfully compromised a vulnerable machine with unconstrained delegation. From there, we executed a DCSync attack to obtain the credentials of the `krbtgt` user, securing both the AES256 key and the NTLM (RC4) hash.
 ## What is a Golden Ticket?
@@ -1936,7 +1976,10 @@ In summary,
 `https://en.wikipedia.org/wiki/Epic_Win`
 ![](http://news.baycode.eu/wp-content/uploads/2023/11/Epic_Win.png)
 
+<div id="0x0F"></div>
+
 # 0x0F Final Thoughts
+<a href="#0x0E"><button class="nav-btn">Previous chapter</button></a>
 
 In this two-part blog series, we've delved into the world of cyber attacks, uncovering the process of how they happen, starting from gathering information using OSINT techniques, to taking control of a whole computer network  - we've found a vulnerability, gained control of the initial pivot point, then found a valid low-privileged user on the domain, and from this point, we escalated to Domain Administrator.
 
@@ -1949,3 +1992,17 @@ Having robust security measures is akin to building a fortress, and being proact
 ### Stay safe!
 
 K.
+
+<style>
+.nav-btn {
+ cursor: pointer;
+ display: inline-block;
+ margin-right: 16px;
+ font-weight: 800;
+ color: white;
+ background-color: #14C096;
+ border-radius: 4px;
+ border: 0px;
+ padding: 8px;
+}
+</style>
