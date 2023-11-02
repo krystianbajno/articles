@@ -2049,12 +2049,6 @@ K.
 - [Golden ticket and domain persistence](#0x0E "Golden ticket and domain persistence")
 
 <style>
-.nav-table-of-contents {
-  position: sticky;
-  bottom: 64px;
-  right: 64px;
-}
-
 .nav-btn {
  cursor: pointer;
  display: inline-block;
