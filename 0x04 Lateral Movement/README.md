@@ -2032,7 +2032,29 @@ Having robust security measures is akin to building a fortress, and being proact
 
 K.
 
+### Table of contents
+- [Automated enumeration with BloodHound](#0x01 "Automated enumeration with BloodHound")
+- [Reports with PlumHound](#0x02 "Reports with PlumHound")
+- [Kerberoasting attacks](#0x03 "Kerberoasting attacks")
+- [Lateral movement](#0x04 "Lateral movement")
+- [AS-REP roasting attacks](#0x05 "AS-REP roasting attacks")
+- [Persistence through RDP and WinRM](#0x06 "Persistence through RDP and WinRM")
+- [Anti-Virus evasion on Windows](#0x07 "Anti-Virus evasion on Windows")
+- [Persistence through Windows Service](#0x08 "Persistence through Windows Service")
+- [Persistence through DLL Hijacking and Proxying](#0x09 "Persistence through DLL Hijacking and Proxying")
+- [Print Nightmare exploitation - .101 compromise](#0x0A "Print Nightmare exploitation - .101 compromise")
+- [URL shortcut file share attack with SMB relay](#0x0B "URL shortcut file share attack with SMB relay")
+- [Dumping LSASS credentials](#0x0C "Dumping LSASS credentials")
+- [Unconstrained delegation attacks](#0x0D "Unconstrained delegation attacks")
+- [Golden ticket and domain persistence](#0x0E "Golden ticket and domain persistence")
+
 <style>
+.nav-table-of-contents {
+  position: sticky;
+  bottom: 64px;
+  right: 64px;
+}
+
 .nav-btn {
  cursor: pointer;
  display: inline-block;
