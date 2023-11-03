@@ -22,7 +22,7 @@ This lengthy article offers easy navigation with links to individual chapters fo
 - [Anti-Virus evasion on Windows](#0x07 "Anti-Virus evasion on Windows")
 - [Persistence through Windows Service](#0x08 "Persistence through Windows Service")
 - [Persistence through DLL Hijacking and Proxying](#0x09 "Persistence through DLL Hijacking and Proxying")
-- [Print Nightmare exploitation - .101 compromise](#0x0A "Print Nightmare exploitation - .101 compromise")
+- [Print Nightmare exploitation](#0x0A "Print Nightmare exploitation")
 - [URL shortcut file share attack with SMB relay](#0x0B "URL shortcut file share attack with SMB relay")
 - [Dumping LSASS credentials](#0x0C "Dumping LSASS credentials")
 - [Unconstrained delegation attacks](#0x0D "Unconstrained delegation attacks")
