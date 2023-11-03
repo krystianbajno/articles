@@ -4,7 +4,6 @@ This is the final part two of a series of articles bound to present a walkthroug
 
 Link to part one:  https://news.baycode.eu/0x03-prototype-pollution/
 You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
-Full article series can be downloaded in form of a **free e-book** [here]. 
 
 The **penetration test report** can be downloaded [here].
   
