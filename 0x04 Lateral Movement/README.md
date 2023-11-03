@@ -1736,13 +1736,10 @@ I also recommend checking out https://lolbas-project.github.io/ for Windows syst
 
 It's a recommended practice to disable the ability of the Windows operating system to cache credentials on any device where credentials aren't needed. Evaluate your servers and workstations to determine the requirements. Cached credentials are designed primarily to be used on laptops that require domain credentials when disconnected from the domain.
 
-1. Enable the "Network access: Do not allow storage of passwords and credentials for network authentication" Group Policy Object (GPO) setting. You can find this setting in `Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options`.
-    
-2. Limit the number of cached credentials by adjusting the `cachedlogonscount` value in the Windows Registry at `HKLM\SOFTWARE\Microsoft\Windows NT\Current Version\Winlogon`.
-    
-3. Enhance security by adding users to the "Protected Users" Active Directory security group. This step can help reduce the caching of users' plaintext credentials.
-    
-4. Address another important security concern by disabling the use of WDigest in the domain through GPO. You can achieve this by configuring the GPO value at `Computer Configuration\Administrative Templates\MS Security Guide\WDigest Authentication` and setting it to "Disabled." This group policy path does not exist by default. Visit this link for more information https://www.tenable.com/audits/items/CIS_MS_Windows_10_Enterprise_Level_1_v1.6.1.audit:edcb6086bbe571d445b65989f42a301a.
+- Enable the "Network access: Do not allow storage of passwords and credentials for network authentication" Group Policy Object (GPO) setting. You can find this setting in `Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options`.
+- Limit the number of cached credentials by adjusting the `cachedlogonscount` value in the Windows Registry at `HKLM\SOFTWARE\Microsoft\Windows NT\Current Version\Winlogon`.
+- Enhance security by adding users to the "Protected Users" Active Directory security group. This step can help reduce the caching of users' plaintext credentials.
+- Address another important security concern by disabling the use of WDigest in the domain through GPO. You can achieve this by configuring the GPO value at `Computer Configuration\Administrative Templates\MS Security Guide\WDigest Authentication` and setting it to "Disabled." This group policy path does not exist by default. Visit this link for more information https://www.tenable.com/audits/items/CIS_MS_Windows_10_Enterprise_Level_1_v1.6.1.audit:edcb6086bbe571d445b65989f42a301a.
 
 More references:
 https://www.csoonline.com/article/567747/how-to-detect-and-halt-credential-theft-via-windows-wdigest.html
