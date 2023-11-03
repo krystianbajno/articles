@@ -484,6 +484,7 @@ By employing this technique, you effectively isolate your objects from the globa
 Let me show you another vulnerability that was found here.
 
 <div id="0x05"></div>
+
 # 0x05 Command injection
 <a href="#0x04"><button class="nav-btn">Previous chapter</button></a><a href="#0x06"><button class="nav-btn">Next chapter</button></a>
 
