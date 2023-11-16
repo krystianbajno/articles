@@ -5,7 +5,7 @@ This is the part one of series of articles bound to present a walkthrough leadin
 Link to part two:  https://news.baycode.eu/0x04-lateral-movement/
 You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
 
-The **penetration test report** can be downloaded [here].
+The **penetration test report** can be downloaded [here](https://github.com/krystianbajno/pentest-demo/releases/download/v1.0/Baycode_Security-Demo_Corp-Findings_Report.pdf).
 
 **In this article, we will be focused on:**
 - [Performing basic username gathering from the website](#0x01 "- Performing basic username gathering from the website")
