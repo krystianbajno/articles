@@ -5,7 +5,7 @@ This is the final part two of a series of articles bound to present a walkthroug
 Link to part one:  https://news.baycode.eu/0x03-prototype-pollution/
 You can access the code on my GitHub: [https://github.com/krystianbajno](https://github.com/krystianbajno/articles).
 
-The **penetration test report** can be downloaded [here](https://github.com/krystianbajno/pentest-demo/releases/download/v1.0/Baycode_Security-Demo_Corp-Findings_Report.pdf).
+The **penetration test report** can be downloaded [here](https://baycode.eu/files/Baycode%20Security%20-%20Demo%20Corp%20-%20Findings%20Report.pdf).
   
 This lengthy article offers easy navigation with links to individual chapters for your convenience. Each chapter includes the **'next'** and **'previous'** buttons for seamless reading. Feel free to skip to the sections that interest you the most and immerse yourself - enjoy your reading experience! 😉
 
