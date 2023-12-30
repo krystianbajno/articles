@@ -5,3 +5,4 @@ draft = false
 image = "thumbnail.png"
 categories = ["Domain Compromise Series", "Internal Pentest", "Infrastructure Hacking", "Active Directory", "Hacking"]
 date = '2023-11-02'
+toc = true

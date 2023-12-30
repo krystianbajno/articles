@@ -5,3 +5,4 @@ draft = false
 image = "thumbnail.jpeg"
 categories = ["Linux", "Hacking"]
 date = '2023-12-30'
+toc = true
