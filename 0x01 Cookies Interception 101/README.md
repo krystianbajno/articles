@@ -168,10 +168,14 @@ After refreshing you can notice that we are logged in as another user.
 
 _Browsers’ javascript parsers allow for client side, cross site code execution._ - [_Cross Site Scripting_](https://www.owasp.org/index.php/Cross-site_Scripting_%28XSS%29).
 
+---
+
+### Stored XSS
+
 >The first XSS exploitation technique I will showcase is called **_stored XSS_**. We will be targeting a vulnerable input that allows us to add an unsanitized comment. The exploitation is persistent as the payload is being constantly red from the database.
 
-
-[![Infographic showing stored XSS](images/storedxss.png)](images/storedxss.png "Infographic showing stored XSS")Infographic showing stored XSS
+[![Infographic showing stored XSS](images/storedxss.png)](images/storedxss.png "Infographic showing stored XSS")
+Infographic showing stored XSS
 
 **For encoding I used one of the Jim Stiles’ [javascript utilities](http://www.jdstiles.com/java/cct.html).** 
 
@@ -188,11 +192,11 @@ Wow, I really like your site <body onload=eval(String.fromCharCode(110,101,119,3
 [![Different user opens the page](images/ss5.png)](images/ss5.png "Different user opens the page")
 Different user opens the page
 
->Another technique is called **_reflected XSS_** and this time we will need the user to click on a prepared link that injects the payload using an unsanitized input. 
-
->Generally, if there is a field that loads a string from the URL and does not filter anything before rendering it, then Reflected XSS is possible.
-
 ---
+
+### Reflected XSS
+
+>Another technique is called **_reflected XSS_** and this time we will need the user to click on a prepared link that injects the payload using an unsanitized input. Generally, if there is a field that loads a string from the URL and does not filter anything before rendering it, then Reflected XSS is possible.
 
 There is a vulnerable search field on this web app, let’s exploit it and send our link to the user.
 
@@ -218,21 +222,21 @@ It involves sniffing on the network, redirecting HTTPS traffic into HTTP, proxyi
 
 We will use a great framework made by [Marcello Salvati](https://github.com/byt3bl33d3r/MITMf).
 
-## Before running, let’s take a look at the source code.
+### Before running, let’s take a look at the source code.
 
-[![As we can see, the framework takes care of most of the boring administrative tasks for us automatically. There is no need to manually set ipv4 forwarding or write iptables rules.](images/ssx1.png)]
+[![As we can see, the framework takes care of most of the boring administrative tasks for us automatically. There is no need to manually set ipv4 forwarding or write iptables rules.](images/ssx1.png)
 
 > As we can see, the framework takes care of most of the boring administrative tasks for us automatically. There is no need to manually set ipv4 forwarding or write iptables rules.  
 
-[![The framework can efficiently spoof the ARP cache of the whole subnet. I will explain in steps how it works. At first we need to resolve the MAC address of targetted devices. We send an ARP 'who-has' request.](images/whohas.png)]
+[![The framework can efficiently spoof the ARP cache of the whole subnet. I will explain in steps how it works. At first we need to resolve the MAC address of targetted devices. We send an ARP 'who-has' request.](images/whohas.png)
 
 >The framework can efficiently spoof the ARP cache of the whole subnet. I will explain in steps how it works. At first we need to resolve the MAC address of targeted devices. We send an ARP 'who-has' request.  
 
-[![Then we announce that we have the MAC address of a gateway (router in this case). By doing that, all the devices are being tricked to send the packets at us after being routed.](images/announce.png)]
+[![Then we announce that we have the MAC address of a gateway (router in this case). By doing that, all the devices are being tricked to send the packets at us after being routed.](images/announce.png)
 
 >Then we announce that we have the MAC address of a gateway (router in this case). By doing that, all the devices are being tricked to send the packets at us after being routed.
 
-[![After we become a man-in-the-middle, we can process the packets and serve whatever we want to the victim devices. In this case, we will intercept HTTP responses and then include a malicious javascript code inside them. We can also sniff the cookies just by intercepting the requests at this point, but we will perform a javascript injection to make it even more sophisticated. The possibilities are endless after the web browser gets trojanized with injected code.](images/packet.png)]
+[![After we become a man-in-the-middle, we can process the packets and serve whatever we want to the victim devices. In this case, we will intercept HTTP responses and then include a malicious javascript code inside them. We can also sniff the cookies just by intercepting the requests at this point, but we will perform a javascript injection to make it even more sophisticated. The possibilities are endless after the web browser gets trojanized with injected code.](images/packet.png)
 
 > After we become a man-in-the-middle, we can process the packets and serve whatever we want to the victim devices. In this case, we will intercept HTTP responses and then include a malicious javascript code inside them. We can also sniff the cookies just by intercepting the requests at this point, but we will perform a javascript injection to make it even more sophisticated. The possibilities are endless after the web browser gets trojanized with injected code.  
 
