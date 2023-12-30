@@ -1,10 +1,11 @@
-**_Disclaimer:_** _You are free to use presented knowledge for educational purposes, with good intentions (penetration testing, ctf’s etc.), or not._ **_I am not responsible for anything you do.
+**_Disclaimer:_** _You are free to use presented knowledge for educational purposes, with good intentions (penetration testing, ctf’s etc.), or not._ **_I am not responsible for anything you do._**
 
 ---
 
 I wrote this article back in 2021, and it was available on my old website. Since 2022, there's a mitigation available, so I've decided to bring the article back and update it.
 
 ---
+
 ## The TIOCSTI interface abuse
 
 ### **Prerequisite:** root
