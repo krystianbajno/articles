@@ -1,0 +1,9 @@
++++
+slug = '0x01-cookies-interception-101'
+title = '0x01 Web Hacking - Cookies Interception 101'
+description = 'This article will explain some of the common HTTP state interception methods.'
+draft = false
+thumbnail = "thumbnail.png"
+categories = ["Web Hacking", "Hacking"]
+date = '2018-04-21'
++++
