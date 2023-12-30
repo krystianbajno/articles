@@ -3,7 +3,7 @@ slug = '0x04-lateral-movement'
 title = '0x04 Lateral Movement'
 description = 'Exploiting the Active Directory environment and compromising the domain controller.'
 draft = false
-thumbnail = "thumbnail.png"
+image = "thumbnail.png"
 categories = ["Domain Compromise Series", "Internal Pentest", "Infrastructure Hacking", "Active Directory", "Hacking"]
 date = '2023-11-02'
 +++

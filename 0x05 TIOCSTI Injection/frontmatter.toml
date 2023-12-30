@@ -3,7 +3,7 @@ slug = '0x05-tiocsti-injection'
 title = '0x05 - TIOCSTI injection'
 description = 'TIOCSTI abuse. Manipulate process file descriptors and execute arbitrary commands using ioctl.'
 draft = false
-thumbnail = "thumbnail.jpeg"
+image = "thumbnail.jpeg"
 categories = ["Linux", "Hacking"]
 date = '2021-06-08'
 +++

@@ -3,7 +3,7 @@ slug = '0x03-prototype-pollution'
 title = '0x03 Prototype Pollution'
 description = 'We found a way into the internal infrastructure. Prototype pollution, popping shells, for fun, and for profit.'
 draft = false
-thumbnail = "thumbnail.png"
+image = "thumbnail.png"
 categories = ["Domain Compromise Series", "External Pentest", "Web Hacking", "Hacking"]
 date = '2023-10-13'
 +++
