@@ -1,5 +1,3 @@
-# [Web hacking #1 - Cookies interception 101](https://krystianbajno.github.io/2018/04/21/webh_1/)
-
 - [Adam Doupe’s vulnerable app I used in this tutorial](https://github.com/adamdoupe/WackoPicko)
 
 **_Disclaimer:_** _You are free to use presented knowledge for educational purposes, with good intentions (securing web applications, penetration testing, ctf’s etc.), or not._ **_I am not responsible for anything you do._**
