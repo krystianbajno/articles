@@ -6,3 +6,4 @@ image = "thumbnail.jpeg"
 categories = ["Linux", "Windows", "Exploits", "Hacking", "Malware"]
 date = '2021-06-07'
 toc = true
+authors = ["Krystian Bajno"]

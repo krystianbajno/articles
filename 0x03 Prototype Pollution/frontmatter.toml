@@ -6,3 +6,4 @@ image = "thumbnail.png"
 categories = ["Domain Compromise Series", "Web Hacking", "Linux", "Windows", "Hacking"]
 date = '2023-10-13'
 toc = true
+authors = ["Krystian Bajno"]
