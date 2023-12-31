@@ -3,6 +3,6 @@ title = '0x02 Terminal Injection'
 description = 'What happens when you run scripts without checking the contents properly?'
 draft = false
 image = "thumbnail.jpeg"
-categories = ["Linux", "Windows", "Exploits", "Hacking"]
+categories = ["Linux", "Windows", "Exploits", "Hacking", "Malware"]
 date = '2021-06-07'
 toc = true
