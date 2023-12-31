@@ -475,13 +475,13 @@ In addition to using Object.freeze() to mitigate potential prototype pollution s
 
 By default, all objects inherit from the global Object.prototype, either directly or indirectly through the prototype chain. However, you have the option to manually set an object's prototype using the Object.create() method. This not only enables you to designate any object as the new object's prototype but also allows you to create the object with a null prototype. This null prototype ensures that the object won't inherit any properties whatsoever:
 
-```
+```javascript
 let object = Object.create(null);
 Object.getPrototypeOf(object); // null
 ```
 
 When using node, you can also use kEmptyObject instead of normal objects.
-```
+```javascript
 const { kEmptyObject } = require('internal/util');
 let object = kEmptyObject
 Object.getPrototypeOf(object); // null
