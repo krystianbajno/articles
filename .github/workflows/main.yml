@@ -2,11 +2,12 @@ name: Trigger deploy in blog repository
 
 on: 
   push:
-    branches:
-      - main
+    branches: ["main"]
+
 jobs:
-  dispatch:
+  deploy:
     runs-on: ubuntu-latest
+    steps:
     - uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.DEPLOY_TOKEN }}
