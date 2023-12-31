@@ -4,6 +4,7 @@ description = 'This article will explain some of the common HTTP state intercept
 draft = false
 image = "thumbnail.png"
 categories = ["Web Hacking", "Hacking"]
+tags = ["Cookies", "Authentication", "XSS", "Man in the Middle"]
 date = '2018-04-21'
 toc = true
 authors = ["Krystian Bajno"]

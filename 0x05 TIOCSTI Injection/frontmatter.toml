@@ -4,6 +4,7 @@ description = 'TIOCSTI abuse. Manipulate process file descriptors and execute ar
 draft = false
 image = "thumbnail.jpeg"
 categories = ["Linux", "Hacking"]
+tags = ["Kernel"]
 date = '2023-12-30'
 toc = true
 authors = ["Krystian Bajno"]

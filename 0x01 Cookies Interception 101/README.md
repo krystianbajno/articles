@@ -96,7 +96,8 @@ _index.php_
 if (isset($_GET['xss'])) {  
   $string = $_GET['xss'];  
   $handle = fopen('xss.txt', 'a');  
-  fwrite($handle, $string."\n");fclose($handle);  
+  fwrite($handle, $string."\n");
+  fclose($handle);  
 }
 ```
 
