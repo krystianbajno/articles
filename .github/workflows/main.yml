@@ -1,0 +1,20 @@
+name: Trigger deploy in blog repository
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  trigger_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Deploy in Repository BLOG
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github.everest-preview+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"event_type": "deploy-posts"}' \
+            https://api.github.com/repos/krystianbajno/baycode-news-hugo/dispatches
