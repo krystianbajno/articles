@@ -501,6 +501,7 @@ administrative privileges, access to highly sensitive systems or data.
 <a href="#0x05"><button class="nav-btn">Previous chapter</button></a><a href="#0x07"><button class="nav-btn">Next chapter</button></a>
 
 `https://makeameme.org/meme/what-if-i-s68chp`
+
 ![](images/images35.jpg)
 
 Our next step is to ensure our presence on the machine is long-lasting and difficult to remove.
