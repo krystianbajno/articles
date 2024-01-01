@@ -21,6 +21,7 @@ How does one manage to affect the file descriptors of a process in such unsafe w
 A common use of this interface, is to control hardware devices. But it can be also used to inject commands into unsuspecting TTY's, even connected to other devices for example over SSH.
 
 Proof of Concept: 
+
 ```python
 import sys, os 
 import termios, fcntl 
@@ -47,7 +48,7 @@ In the example above we are attaching to the process stdin, sending chars one by
 
  > In summary, it is possible to transparently take control over a program descriptor using TIOCSTI.
 
-## Mitigation:
+## Mitigation
 
 TIOCSTI is a kernel problem.
 https://jdebp.uk/FGA/TIOCSTI-is-a-kernel-problem.html
