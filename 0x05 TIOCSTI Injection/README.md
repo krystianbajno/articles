@@ -36,7 +36,7 @@ while True:
   line = input(f"{fd} $ ") 
   for character in line: 
      fcntl.ioctl(fd_handle, termios.TIOCSTI, character)
-     fcntl.ioctl(fd_handle, termios.TIOCSTI, '\x0d')
+  fcntl.ioctl(fd_handle, termios.TIOCSTI, '\x0d')
 ```
 
 In the example above we are attaching to the process stdin, sending chars one by one, and then executing the command by sending the **'\x0d'** shell escape char.
