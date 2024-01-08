@@ -1,0 +1,10 @@
+slug = '0x06-say-hello-to-security-ai-voice-cloning'
+title = '0x06 - Say Hello To Security - AI & Voice Cloning'
+description = 'Part one of the Hello Security series dedicated to extend cyber-security awareness, performed at WGUiSW conference.'
+draft = false
+image = "thumbnail.png"
+categories = ["Hello Security", "Artificial Intelligence", "Conferences"]
+tags = ["Deep Learning", "Voice Cloning", "Face Swapping", "Deep Fakes", "GAN", "LLM", "WGUiSW"]
+date = '2024-01-08'
+toc = true
+authors = ["Krystian Bajno"]
