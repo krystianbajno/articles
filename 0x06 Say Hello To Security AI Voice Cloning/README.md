@@ -31,11 +31,11 @@ The presentation in PDF format can be downloaded [here](assets/Say_Hello_to_Secu
 ---
 # What is WGUiSW?
 
-WGUiSW is a community dedicated to Microsoft professionals and users, organised by [Paweł Pławiak](https://www.linkedin.com/in/pplawiak/), CEO of [CBSG Polska](https://www.cbsg.pl/), the official Microsoft partner.
+[WGUiSW](http://www.wguisw.org) is a community dedicated to Microsoft professionals and users, organised by [Paweł Pławiak](https://www.linkedin.com/in/pplawiak/), CEO of [CBSG Polska](https://www.cbsg.pl/), the official Microsoft partner.
 
-The WGUISW community event offers a great platform for professionals to connect and discuss their interests in technology. Attendees had the opportunity to engage in meaningful conversations, share perspectives, and build valuable relationships.
+The [WGUISW](http://www.wguisw.org) community event offers a great platform for professionals to connect and discuss their interests in technology. Attendees had the opportunity to engage in meaningful conversations, share perspectives, and build valuable relationships.
 
-## Join WGUiSW
-Don't miss out! Join WGUISW every second Tuesday of the month at [wguisw.org](www.wguisw.org).
+## Join [WGUiSW](http://www.wguisw.org)
+Don't miss out! Join WGUISW every second Tuesday of the month at [wguisw.org](http://www.wguisw.org).
 
 K.
