@@ -5,6 +5,6 @@ draft = false
 image = "thumbnail.png"
 categories = ["Hello Security", "Artificial Intelligence", "Conferences"]
 tags = ["Deep Learning", "Voice Cloning", "Face Swapping", "Deep Fakes", "GAN", "LLM", "WGUiSW"]
-date = '2024-01-08'
+date = '2024-01-09'
 toc = true
 authors = ["Krystian Bajno"]
