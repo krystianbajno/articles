@@ -1,0 +1,10 @@
+slug = '0x07-say-hello-to-security-ai-voice-cloning'
+title = '0x07 - About Insider Threats. Crypto, Stego, DLP'
+description = 'Part two of the Hello Security series dedicated to extend cyber-security awareness, performed at WGUiSW conference.'
+draft = false
+image = "thumbnail.png"
+categories = ["Hello Security", "Insider Threats", "Cryptography", "Steganography"]
+tags = ["Insider Threats", "Cryptography", "Steganography", "Data Loss Prevention", "WGUiSW"]
+date = '2024-02-05'
+toc = true
+authors = ["Krystian Bajno"]
