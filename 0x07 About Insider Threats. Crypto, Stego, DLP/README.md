@@ -2,7 +2,7 @@
 
 # WGUiSW Event - [Hello Security]
 
-> On February 6th 2024, I gave a talk on Insider Threats, Cryptography, and Steganography during WGUISW 157th conference in BEC Poland, Warsaw, as part two of the [Hello Security] series dedicated to extend cyber-security awareness.
+> On February 6th 2024, I gave a talk on Insider Threats, Cryptography, Steganography, and DLP evasion during WGUISW 157th conference in BEC Poland, Warsaw, as part two of the [Hello Security] series dedicated to extend cyber-security awareness.
 
 ---
 
