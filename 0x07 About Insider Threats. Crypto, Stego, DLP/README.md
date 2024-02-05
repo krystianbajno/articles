@@ -29,6 +29,8 @@
 
 The presentation in PDF format can be downloaded [here](assets/About_Insider_Threats-Crypto_Stego_DLP_2024.pdf "here").
 
+The source code can be viewed [here](https://github.com/krystianbajno/articles/tree/main/0x07%20About%20Insider%20Threats.%20Crypto%2C%20Stego%2C%20DLP/src "here").
+
 ---
 # What is WGUiSW?
 
