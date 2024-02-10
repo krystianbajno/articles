@@ -4,7 +4,7 @@
 
 > On February 6th 2024, I gave a talk on Insider Threats, Cryptography, Steganography, and DLP evasion during WGUISW 157th conference in BEC Poland, Warsaw, as part two of the [Hello Security] series dedicated to extend cyber-security awareness.
 
-![7er404](images/thiccpic.jpeg)
+![WGUiSW 157, BEC Poland](images/thiccpic.jpeg)
 
 ---
 ## Agenda

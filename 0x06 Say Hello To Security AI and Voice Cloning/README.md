@@ -4,7 +4,7 @@
 
 > On January 9th 2024, I gave a talk on AI - GAN and LLMs, deepfakes, voice cloning, and emerging 2024 AI threats during WGUISW 156th conference in BEC Poland, Warsaw, as part one of the [Hello Security] series dedicated to extend cyber-security awareness.
 
-![7er404](images/thiccpic.jpeg)
+![WGUiSW 156, BEC Poland](images/thiccpic.jpeg)
 
 ---
 ## Agenda
