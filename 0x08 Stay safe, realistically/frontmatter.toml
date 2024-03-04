@@ -1,0 +1,10 @@
+slug = '0x08-stay-safe-realistically'
+title = '0x08 - Stay safe, realistically'
+description = 'Final part three of the Hello Security series dedicated to extend cyber-security awareness, performed at WGUiSW conference.'
+draft = false
+image = "thumbnail.png"
+categories = ["Hello Security", "Security Awareness", "Conferences"]
+tags = ["Security Awareness", "WGUiSW"]
+date = '2024-03-04'
+toc = true
+authors = ["Krystian Bajno"]
